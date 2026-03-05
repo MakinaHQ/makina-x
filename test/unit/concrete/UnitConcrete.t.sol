@@ -11,6 +11,8 @@ abstract contract Unit_Concrete_Test is Base_Test {
     function setUp() public virtual override {
         Base_Test.setUp();
 
-        makinaLiteModule = new MakinaLiteModule(address(registry), address(safe), dao, DEFAULT_MAX_SWAP_LOSS_BPS);
+        makinaLiteModule = new MakinaLiteModule(
+            address(registry), address(safe), dao, DEFAULT_MAX_SWAP_LOSS_BPS, DEFAULT_SWAP_FEE_RATE
+        );
     }
 }

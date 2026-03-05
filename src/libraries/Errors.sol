@@ -8,6 +8,7 @@ library Errors {
     error InvalidBpsValue();
     error InvalidDecimals();
     error InvalidFeedRoute();
+    error InvalidFeeRate();
     error MaxValueLossExceeded();
     error NegativeTokenPrice(address priceFeed);
     error NotGuardian();

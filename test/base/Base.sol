@@ -14,6 +14,10 @@ abstract contract Base {
         deployment.registry = _deployMakinaLiteRegistry(_accessManager, _accessManager);
     }
 
+    function setupMakinaLiteRegistry(MakinaLiteInfra memory deployment, address feeCollector) internal {
+        deployment.registry.setFeeCollector(feeCollector);
+    }
+
     function _deployMakinaLiteRegistry(address _proxyOwner, address _accessManager)
         internal
         returns (MakinaLiteRegistry registry)

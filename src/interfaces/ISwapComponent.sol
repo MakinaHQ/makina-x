@@ -10,6 +10,7 @@ interface ISwapComponent {
         uint256 inputAmount,
         uint256 outputAmount
     );
+    event SwapFeeRateChanged(uint256 oldSwapFeeRate, uint256 newSwapFeeRate);
     event SwapperTargetsSet(uint16 indexed swapper, address approvalTarget, address executionTarget);
 
     struct SwapperTargets {
@@ -36,6 +37,9 @@ interface ISwapComponent {
     /// @notice Max allowed value loss (in basis point) for base token swaps, while in lockdown mode.
     function maxSwapLossBps() external view returns (uint256);
 
+    /// @notice Swap fee rate, 1e18 = 100%.
+    function swapFeeRate() external view returns (uint256);
+
     /// @notice Returns approval and execution targets for a given swapper ID.
     /// @param swapperId The swapper ID.
     /// @return approvalTarget The approval target.
@@ -49,6 +53,10 @@ interface ISwapComponent {
     /// @notice Sets the maximum allowed value loss (in basis points) for base token swaps while in lockdown mode.
     /// @param newMaxSwapLossBps The new maximum swap loss in basis points.
     function setMaxSwapLossBps(uint256 newMaxSwapLossBps) external;
+
+    /// @notice Sets the swap fee rate.
+    /// @param newSwapFeeRate The new swap fee rate, 1e18 = 100%.
+    function setSwapFeeRate(uint256 newSwapFeeRate) external;
 
     /// @notice Sets approval and execution targets for a given swapper ID.
     /// @param swapperId The swapper ID.

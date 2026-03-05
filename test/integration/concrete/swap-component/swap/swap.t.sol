@@ -163,7 +163,10 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         makinaLiteModule.swap(order);
     }
 
-    function test_Swap() public {
+    function test_Swap_WithoutFee() public {
+        vm.prank(dao);
+        makinaLiteModule.setSwapFeeRate(0);
+
         uint256 inputAmount = 1e18;
         deal(address(tokenA), address(safe), inputAmount, true);
 
@@ -184,6 +187,32 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         makinaLiteModule.swap(order);
 
         assertEq(tokenB.balanceOf(address(safe)), previewSwap);
+        assertEq(tokenB.balanceOf(dao), 0);
+    }
+
+    function test_Swap_WithFee() public {
+        uint256 inputAmount = 1e18;
+        deal(address(tokenA), address(safe), inputAmount, true);
+
+        uint256 previewSwap = dex.previewSwap(address(tokenA), address(tokenB), inputAmount);
+        uint256 expectedFee = previewSwap * DEFAULT_SWAP_FEE_RATE / 1e18;
+
+        ISwapComponent.SwapOrder memory order = ISwapComponent.SwapOrder({
+            swapperId: TEST_SWAPPER_ID,
+            data: abi.encodeCall(MockDex.swap, (address(tokenA), address(tokenB), inputAmount)),
+            inputToken: address(tokenA),
+            outputToken: address(tokenB),
+            inputAmount: inputAmount,
+            minOutputAmount: 0
+        });
+
+        vm.expectEmit(true, true, true, true, address(makinaLiteModule));
+        emit ISwapComponent.Swap(TEST_SWAPPER_ID, address(tokenA), address(tokenB), inputAmount, previewSwap);
+        vm.prank(operator);
+        makinaLiteModule.swap(order);
+
+        assertEq(tokenB.balanceOf(address(safe)), previewSwap - expectedFee);
+        assertEq(tokenB.balanceOf(dao), expectedFee);
     }
 
     function test_RevertGiven_PriceFeedRouteNotRegistered_WhileInLockDownMode() public whileInLockdownMode {
@@ -246,6 +275,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         dex.setQuote(address(tokenA), address(tokenB), 1, 1);
 
         uint256 previewSwap = dex.previewSwap(address(tokenA), address(tokenB), inputAmount);
+        uint256 expectedFee = previewSwap * DEFAULT_SWAP_FEE_RATE / 1e18;
 
         ISwapComponent.SwapOrder memory order = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -261,6 +291,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         vm.prank(operator);
         makinaLiteModule.swap(order);
 
-        assertEq(tokenB.balanceOf(address(safe)), previewSwap);
+        assertEq(tokenB.balanceOf(address(safe)), previewSwap - expectedFee);
+        assertEq(tokenB.balanceOf(dao), expectedFee);
     }
 }

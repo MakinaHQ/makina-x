@@ -21,6 +21,9 @@ abstract contract SwapComponent is ISwapComponent {
     uint256 public maxSwapLossBps;
 
     /// @inheritdoc ISwapComponent
+    uint256 public swapFeeRate;
+
+    /// @inheritdoc ISwapComponent
     function getSwapperTargets(uint16 swapperId)
         external
         view
@@ -72,6 +75,12 @@ abstract contract SwapComponent is ISwapComponent {
     function _setMaxSwapLossBps(uint256 newMaxSwapLossBps) internal {
         emit MaxSwapLossBpsChanged(maxSwapLossBps, newMaxSwapLossBps);
         maxSwapLossBps = newMaxSwapLossBps;
+    }
+
+    /// @dev Internal logic to set the swap fee rate.
+    function _setSwapFeeRate(uint256 newSwapFeeRate) internal {
+        emit SwapFeeRateChanged(swapFeeRate, newSwapFeeRate);
+        swapFeeRate = newSwapFeeRate;
     }
 
     /// @dev Internal logic to set approval and execution targets for a given swapper ID.

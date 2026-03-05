@@ -39,6 +39,28 @@ contract Getters_Setters_SwapComponent_Unit_Concrete_Test is SwapComponent_Unit_
         assertEq(swapComponent.maxSwapLossBps(), newMaxSwapLossBps);
     }
 
+    function test_SetSwapFeeRate_RevertWhen_CallerNotProvider() public {
+        vm.expectRevert(Errors.UnauthorizedCaller.selector);
+        swapComponent.setSwapFeeRate(0);
+    }
+
+    function test_SetSwapFeeRate_RevertWhen_InvalidFeeRate() public {
+        vm.expectRevert(Errors.InvalidFeeRate.selector);
+        vm.prank(dao);
+        swapComponent.setSwapFeeRate(1e18 + 1);
+    }
+
+    function test_SetSwapFeeRate() public {
+        uint256 newSwapFeeRate = 5e15; // 0.5%
+
+        vm.expectEmit(true, true, false, false, address(swapComponent));
+        emit ISwapComponent.SwapFeeRateChanged(DEFAULT_SWAP_FEE_RATE, newSwapFeeRate);
+        vm.prank(dao);
+        swapComponent.setSwapFeeRate(newSwapFeeRate);
+
+        assertEq(swapComponent.swapFeeRate(), newSwapFeeRate);
+    }
+
     function test_SetSwapperTargets_RevertWhen_CallerNotSafe() public {
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
         swapComponent.setSwapperTargets(0, address(0), address(0));

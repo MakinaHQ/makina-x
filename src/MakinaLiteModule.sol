@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {DecimalsUtils} from "./libraries/DecimalsUtils.sol";
 import {IMakinaLiteModule} from "./interfaces/IMakinaLiteModule.sol";
+import {IMakinaLiteRegistry} from "./interfaces/IMakinaLiteRegistry.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MakinaLiteContext} from "./utils/MakinaLiteContext.sol";
@@ -26,14 +27,21 @@ contract MakinaLiteModule is
     using Math for uint256;
     using SafeERC20 for IERC20;
 
+    /// @dev Full scale value in basis points
     uint256 private constant MAX_BPS = 10_000;
 
-    constructor(address registry, address _safe, address _provider, uint256 _maxSwapLossBps)
+    /// @dev Full scale value for fee rates
+    uint256 private constant MAX_FEE_RATE = 1e18;
+
+    constructor(address registry, address _safe, address _provider, uint256 _maxSwapLossBps, uint256 _swapFeeRate)
         MakinaLiteContext(registry)
         MakinaLiteGovernable(_safe, _provider)
     {
         _checkBps(_maxSwapLossBps);
         _setMaxSwapLossBps(_maxSwapLossBps);
+
+        _checkFeeRate(_swapFeeRate);
+        _setSwapFeeRate(_swapFeeRate);
     }
 
     /// @inheritdoc IOracleRegistry
@@ -68,6 +76,11 @@ contract MakinaLiteModule is
         _setMaxSwapLossBps(newMaxSwapLossBps);
     }
 
+    function setSwapFeeRate(uint256 newSwapFeeRate) external override onlyProvider {
+        _checkFeeRate(newSwapFeeRate);
+        _setSwapFeeRate(newSwapFeeRate);
+    }
+
     /// @inheritdoc ISwapComponent
     function setSwapperTargets(uint16 swapperId, address approvalTarget, address executionTarget)
         external
@@ -83,7 +96,9 @@ contract MakinaLiteModule is
 
         uint256 amountOut = _swap(order, lockdownMode);
 
-        IERC20(order.outputToken).safeTransfer(safe, amountOut);
+        uint256 fee = _chargeSwapFee(order.outputToken, amountOut);
+
+        IERC20(order.outputToken).safeTransfer(safe, amountOut - fee);
     }
 
     /// @dev Returns the value of `baseTokenAmount` of `baseToken` denominated in `quoteToken`,  using the registered price feed.
@@ -114,5 +129,27 @@ contract MakinaLiteModule is
         if (bpsValue > MAX_BPS) {
             revert Errors.InvalidBpsValue();
         }
+    }
+
+    /// @dev Performs sanity check on a fee rate.
+    function _checkFeeRate(uint256 rate) internal pure {
+        if (rate > MAX_FEE_RATE) {
+            revert Errors.InvalidFeeRate();
+        }
+    }
+
+    /// @dev Computes the fee for a given swap output, transfers it to the fee collector, and returns it.
+    function _chargeSwapFee(address tokenOut, uint256 amountOut) internal returns (uint256) {
+        if (swapFeeRate == 0) {
+            return 0;
+        }
+
+        uint256 fee = amountOut.mulDiv(swapFeeRate, MAX_FEE_RATE);
+        if (fee > 0) {
+            address feeCollector = IMakinaLiteRegistry(registry).feeCollector();
+            IERC20(tokenOut).safeTransfer(feeCollector, fee);
+        }
+
+        return fee;
     }
 }

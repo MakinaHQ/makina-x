@@ -40,6 +40,8 @@ abstract contract Base_Test is Base, Constants, Test {
         MakinaLiteInfra memory makinaLiteInfra = deployMakinaLiteInfra(address(accessManager));
         registry = makinaLiteInfra.registry;
 
+        setupMakinaLiteRegistry(makinaLiteInfra, dao);
+
         setupAccessManagerRoles();
     }
 
