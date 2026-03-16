@@ -13,6 +13,8 @@
     "const-name-snakecase": "off",
     "no-inline-assembly": "off",
     "contract-name-capwords": "off",
-    "max-states-count": ["error", 50]
+    "max-states-count": ["error", 50],
+    "use-natspec": "off",
+    "import-path-check": "off"
   }
 }
