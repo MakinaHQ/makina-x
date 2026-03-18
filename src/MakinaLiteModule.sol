@@ -2,11 +2,15 @@
 pragma solidity 0.8.34;
 
 import {IMakinaLiteModule} from "./interfaces/IMakinaLiteModule.sol";
+import {MakinaLiteContext} from "./utils/MakinaLiteContext.sol";
 import {MakinaLiteGovernable} from "./utils/MakinaLiteGovernable.sol";
 import {OracleRegistry, IOracleRegistry} from "./module-components/OracleRegistry.sol";
 
-contract MakinaLiteModule is MakinaLiteGovernable, OracleRegistry, IMakinaLiteModule {
-    constructor(address _safe, address _provider) MakinaLiteGovernable(_safe, _provider) {}
+contract MakinaLiteModule is MakinaLiteContext, MakinaLiteGovernable, OracleRegistry, IMakinaLiteModule {
+    constructor(address registry, address _safe, address _provider)
+        MakinaLiteContext(registry)
+        MakinaLiteGovernable(_safe, _provider)
+    {}
 
     /// @inheritdoc IOracleRegistry
     function setFeedRoute(

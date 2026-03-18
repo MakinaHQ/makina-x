@@ -43,7 +43,7 @@ contract OracleRegistry_Unit_Fuzz_Test is Base_Test {
     function setUp() public override {
         Base_Test.setUp();
 
-        oracleRegistry = IOracleRegistry(address(new MakinaLiteModule(address(safe), dao)));
+        oracleRegistry = IOracleRegistry(address(new MakinaLiteModule(address(registry), address(safe), dao)));
     }
 
     function _fuzzTestSetupAfter(Data memory data) public {

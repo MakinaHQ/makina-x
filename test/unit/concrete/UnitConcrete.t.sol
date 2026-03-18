@@ -11,6 +11,6 @@ abstract contract Unit_Concrete_Test is Base_Test {
     function setUp() public virtual override {
         Base_Test.setUp();
 
-        makinaLiteModule = new MakinaLiteModule(address(safe), dao);
+        makinaLiteModule = new MakinaLiteModule(address(registry), address(safe), dao);
     }
 }
