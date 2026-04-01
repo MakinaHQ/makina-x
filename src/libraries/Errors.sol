@@ -43,6 +43,7 @@ library Errors {
     error Suspended();
     error SwapFailed();
     error SwapperTargetsNotSet();
+    error SweepNativeFailed();
     error TransferFromSafeFailed();
     error UnauthorizedCaller();
     error ZeroAddress();

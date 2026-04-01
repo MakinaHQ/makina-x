@@ -242,6 +242,20 @@ contract MakinaLiteModule is
         _removeRecipient(foreignChainId, recipient);
     }
 
+    /// @inheritdoc IMakinaLiteModule
+    function sweepERC20(address token) external nonReentrant onlySafe {
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransfer(safe, bal);
+    }
+
+    /// @inheritdoc IMakinaLiteModule
+    function sweepNative() external nonReentrant onlySafe {
+        (bool success,) = safe.call{value: address(this).balance}("");
+        if (!success) {
+            revert Errors.SweepNativeFailed();
+        }
+    }
+
     /// @dev Internal logic to execute swap tokens on behalf of Safe using a given swapper.
     function _swapForSafe(ISwapComponent.SwapOrder calldata order) internal {
         _pullERC20FromSafe(order.inputToken, order.inputAmount);
