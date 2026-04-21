@@ -9,9 +9,11 @@ import {
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {Constants} from "../utils/Constants.sol";
+import {FlashLoanModule} from "src/flash-loans/FlashLoanModule.sol";
 import {IRCodeReader} from "../utils/IRCodeReader.sol";
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 import {MakinaLiteRegistry} from "../../src/registry/MakinaLiteRegistry.sol";
+import {MockMorpho} from "../mocks/MockMorpho.sol";
 import {MockSafe} from "../mocks/MockSafe.sol";
 
 import {Base} from "./Base.sol";
@@ -23,6 +25,8 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
     address internal operator;
     address internal guardian;
 
+    MockMorpho internal morpho;
+
     MockSafe internal safe;
 
     AccessManagerUpgradeable internal accessManager;
@@ -32,6 +36,7 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
     MakinaLiteRegistry internal registry;
     ModuleFactory internal moduleFactory;
     address makinaLiteModuleImplem;
+    FlashLoanModule internal flashLoanModule;
 
     function setUp() public virtual {
         deployer = address(this);
@@ -39,15 +44,19 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
         operator = makeAddr("operator");
         guardian = makeAddr("guardian");
 
+        morpho = new MockMorpho();
+
         _deployAccessManager(deployer, deployer);
         _deployWeirollVM();
 
         safe = new MockSafe();
 
-        MakinaLiteInfra memory makinaLiteInfra = deployMakinaLiteInfra(address(accessManager), weirollVM);
+        MakinaLiteInfra memory makinaLiteInfra =
+            deployMakinaLiteInfra(address(accessManager), weirollVM, FlashLoanProviders({morpho: address(morpho)}));
         registry = makinaLiteInfra.registry;
         moduleFactory = makinaLiteInfra.moduleFactory;
         makinaLiteModuleImplem = makinaLiteInfra.makinaLiteModuleImplem;
+        flashLoanModule = makinaLiteInfra.flashLoanModule;
 
         setupMakinaLiteRegistry(makinaLiteInfra, dao);
 

@@ -17,6 +17,7 @@ abstract contract Constants {
     uint256 internal constant VAULT_POS_ID = 3;
     uint256 internal constant SUPPLY_POS_ID = 4;
     uint256 internal constant BORROW_POS_ID = 5;
+    uint256 internal constant LOOP_POS_ID = 6;
 
     uint32 internal constant ACROSS_V4_FILL_DEADLINE_OFFSET = 1 hours;
 

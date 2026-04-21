@@ -12,6 +12,8 @@ import fs from "fs";
 //  mockSupplyModulePosId
 //  mockBorrowModuleAddr
 //  mockBorrowModulePosId
+//  flashLoanModule
+//  mockLoopPosId
 
 // Instructions format: [commandsHash, stateHash, stateBitmap, positionId, isDebt, groupId, affectedTokensHash, positionTokensHash, instructionType]
 
@@ -24,6 +26,8 @@ const mockSupplyModuleAddr = process.argv[7];
 const mockSupplyModulePosId = process.argv[8];
 const mockBorrowModuleAddr = process.argv[9];
 const mockBorrowModulePosId = process.argv[10];
+const flashLoanModule = process.argv[11];
+const mockLoopPosId = process.argv[12];
 
 const depositMock4626Instruction = [
   keccak256EncodePacked([
@@ -176,6 +180,44 @@ const harvestMockTokenAInstruction = [
   "2",
 ];
 
+const dummyLoopMockFlashLoanModuleInstruction = [
+  keccak256EncodePacked([
+    ethers.concat(["0xb1485fa00180ffffffffffff", flashLoanModule]),
+  ]),
+  getStateHash([]),
+  "0x00000000000000000000000000000000",
+  mockLoopPosId,
+  false,
+  "0",
+  keccak256EncodePacked([]),
+  keccak256EncodePacked([]),
+  "0",
+];
+
+const accountingMockFlashLoanModuleInstruction = [
+  keccak256EncodePacked([]),
+  getStateHash([]),
+  "0x00000000000000000000000000000000",
+  mockLoopPosId,
+  false,
+  "0",
+  keccak256EncodePacked([]),
+  keccak256EncodePacked([]),
+  "1",
+];
+
+const dummyManageFlashLoanInstruction = [
+  keccak256EncodePacked([]),
+  getStateHash([]),
+  "0x00000000000000000000000000000000",
+  mockLoopPosId,
+  false,
+  "0",
+  keccak256EncodePacked([]),
+  keccak256EncodePacked([]),
+  "3",
+];
+
 const values = [
   depositMock4626Instruction,
   redeemMock4626Instruction,
@@ -187,6 +229,9 @@ const values = [
   repayMockBorrowModuleInstruction,
   accountingMockBorrowModuleInstruction,
   harvestMockTokenAInstruction,
+  dummyLoopMockFlashLoanModuleInstruction,
+  accountingMockFlashLoanModuleInstruction,
+  dummyManageFlashLoanInstruction,
 ];
 
 const tree = StandardMerkleTree.of(values, [
@@ -213,6 +258,9 @@ const treeData = {
   proofRepayMockBorrowModule: tree.getProof(7),
   proofAccountingMockBorrowModule: tree.getProof(8),
   proofHarvestMockTokenA: tree.getProof(9),
+  proofDummyLoopMockFlashLoanModule: tree.getProof(10),
+  proofAccountingMockFlashLoanModule: tree.getProof(11),
+  proofDummyManageFlashLoan: tree.getProof(12),
 };
 
 fs.writeFileSync(

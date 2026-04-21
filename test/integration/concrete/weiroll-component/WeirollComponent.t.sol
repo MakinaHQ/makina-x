@@ -16,7 +16,9 @@ abstract contract WeirollComponent_Integration_Concrete_Test is Integration_Conc
             mockSupplyModule: address(supplyModule),
             mockSupplyModulePosId: SUPPLY_POS_ID,
             mockBorrowModule: address(borrowModule),
-            mockBorrowModulePosId: BORROW_POS_ID
+            mockBorrowModulePosId: BORROW_POS_ID,
+            flashLoanModule: address(flashLoanModule),
+            mockLoopPosId: LOOP_POS_ID
         });
 
         // generate merkle tree for instructions involving mock contracts

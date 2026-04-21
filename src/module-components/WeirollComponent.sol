@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {TransientSlot} from "@openzeppelin/contracts/utils/TransientSlot.sol";
 
 import {Errors} from "../libraries/Errors.sol";
 import {ISafe} from "../interfaces/ISafe.sol";
@@ -15,12 +16,25 @@ import {IWeirollComponent} from "../interfaces/IWeirollComponent.sol";
 abstract contract WeirollComponent is IWeirollComponent {
     using Math for uint256;
     using SafeERC20 for IERC20;
+    using TransientSlot for *;
 
     /// @dev Full scale value in basis points
     uint256 private constant MAX_BPS = 10_000;
 
     /// @dev Flag to indicate end of values in the accounting output state.
     bytes32 private constant ACCOUNTING_OUTPUT_STATE_END = bytes32(type(uint256).max);
+
+    // keccak256(abi.encode(uint256(keccak256("makina.storage.WeirollComponent.managedPositionId")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant MANAGED_POSITION_ID_SLOT =
+        0xfbb6b868544e1f69cf175881d715d83b048bd3f24bc7e327034891f3b849d600;
+
+    // keccak256(abi.encode(uint256(keccak256("makina.storage.WeirollComponent.isManagedPositionDebt")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant IS_MANAGED_POSITION_DEBT_SLOT =
+        0x4e4b4e291d20f6f03003921c4d26de1006021d95c6c1641168790b4e4b3b7200;
+
+    // keccak256(abi.encode(uint256(keccak256("makina.storage.WeirollComponent.isManagingFlashLoan")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant IS_MANAGING_FLASHLOAN_SLOT =
+        0x8af85af09dfd26c2dc59ce2f32b0ca3422706a314bdc173e6610c5138eba2b00;
 
     /// @inheritdoc IWeirollComponent
     address public immutable weirollVm;
@@ -48,19 +62,23 @@ abstract contract WeirollComponent is IWeirollComponent {
         bool lockdownMode,
         address safe
     ) internal returns (uint256 value, int256 change) {
+        uint256 posId = mgmtInstruction.positionId;
+        if (posId == 0) {
+            revert Errors.ZeroPositionId();
+        }
         if (mgmtInstruction.instructionType != InstructionType.MANAGEMENT) {
             revert Errors.InvalidInstructionType();
         }
         _checkInstructionIsAllowed(mgmtInstruction);
 
+        MANAGED_POSITION_ID_SLOT.asUint256().tstore(posId);
+        IS_MANAGED_POSITION_DEBT_SLOT.asBoolean().tstore(mgmtInstruction.isDebt);
+
         uint256 valueBefore;
 
         bool acctInstructionProvided = acctInstruction.commands.length != 0;
         if (acctInstructionProvided) {
-            if (
-                mgmtInstruction.positionId != acctInstruction.positionId
-                    || mgmtInstruction.isDebt != acctInstruction.isDebt
-            ) {
+            if (posId != acctInstruction.positionId || mgmtInstruction.isDebt != acctInstruction.isDebt) {
                 revert Errors.InstructionsMismatch();
             }
             valueBefore = _accountForPosition(acctInstruction, true, safe);
@@ -101,7 +119,53 @@ abstract contract WeirollComponent is IWeirollComponent {
             }
         }
 
-        emit PositionManaged(acctInstructionProvided, lockdownMode, mgmtInstruction.positionId, value);
+        MANAGED_POSITION_ID_SLOT.asUint256().tstore(0);
+        IS_MANAGED_POSITION_DEBT_SLOT.asBoolean().tstore(false);
+
+        emit PositionManaged(acctInstructionProvided, lockdownMode, posId, value);
+    }
+
+    /// @dev Manages and refunds flash loan funds.
+    function _manageFlashLoan(
+        Instruction calldata instruction,
+        address token,
+        uint256 amount,
+        address safe,
+        address flashLoanModule
+    ) internal {
+        if (IS_MANAGING_FLASHLOAN_SLOT.asBoolean().tload()) {
+            revert Errors.ManageFlashLoanReentrantCall();
+        }
+
+        if (msg.sender != flashLoanModule) {
+            revert Errors.NotFlashLoanModule();
+        }
+
+        uint256 managedPositionId = MANAGED_POSITION_ID_SLOT.asUint256().tload();
+        if (managedPositionId == 0) {
+            revert Errors.DirectManageFlashLoanCall();
+        }
+        if (instruction.instructionType != InstructionType.FLASHLOAN_MANAGEMENT) {
+            revert Errors.InvalidInstructionType();
+        }
+        if (
+            managedPositionId != instruction.positionId
+                || IS_MANAGED_POSITION_DEBT_SLOT.asBoolean().tload() != instruction.isDebt
+        ) {
+            revert Errors.InstructionsMismatch();
+        }
+        if (instruction.isDebt) {
+            revert Errors.InvalidDebtFlag();
+        }
+
+        IS_MANAGING_FLASHLOAN_SLOT.asBoolean().tstore(true);
+
+        IERC20(token).safeTransferFrom(flashLoanModule, safe, amount);
+        _checkInstructionIsAllowed(instruction);
+        _execute(instruction.commands, instruction.state, safe);
+        _refundFlashLoan(token, amount, flashLoanModule);
+
+        IS_MANAGING_FLASHLOAN_SLOT.asBoolean().tstore(false);
     }
 
     /// @dev Computes the accounting value of a position.
@@ -293,4 +357,6 @@ abstract contract WeirollComponent is IWeirollComponent {
         view
         virtual
         returns (uint256);
+
+    function _refundFlashLoan(address token, uint256 amount, address flashLoanModule) internal virtual;
 }

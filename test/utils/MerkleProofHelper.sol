@@ -21,6 +21,8 @@ abstract contract MerkleProofHelper {
         uint256 mockSupplyModulePosId;
         address mockBorrowModule;
         uint256 mockBorrowModulePosId;
+        address flashLoanModule;
+        uint256 mockLoopPosId;
     }
 
     function _generateMerkleData(MerkleTreeParams memory params) internal returns (bytes32) {
@@ -37,6 +39,8 @@ abstract contract MerkleProofHelper {
         command[9] = vm.toString(params.mockSupplyModulePosId);
         command[10] = vm.toString(params.mockBorrowModule);
         command[11] = vm.toString(params.mockBorrowModulePosId);
+        command[12] = vm.toString(params.flashLoanModule);
+        command[13] = vm.toString(params.mockLoopPosId);
 
         bytes memory out = vm.ffi(command);
         bytes32 root = bytes32(out);
@@ -93,5 +97,17 @@ abstract contract MerkleProofHelper {
 
     function _getHarvestMockTokenAInstrProof() internal view returns (bytes32[] memory) {
         return _getMerkleData().readBytes32Array(".proofHarvestMockTokenA");
+    }
+
+    function _getDummyLoopMockFlashLoanModuleInstrProof() internal view returns (bytes32[] memory) {
+        return _getMerkleData().readBytes32Array(".proofDummyLoopMockFlashLoanModule");
+    }
+
+    function _getAccountingMockFlashLoanModuleInstrProof() internal view returns (bytes32[] memory) {
+        return _getMerkleData().readBytes32Array(".proofAccountingMockFlashLoanModule");
+    }
+
+    function _getManageFlashLoanDummyInstrProof() internal view returns (bytes32[] memory) {
+        return _getMerkleData().readBytes32Array(".proofDummyManageFlashLoan");
     }
 }
