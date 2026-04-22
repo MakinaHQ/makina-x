@@ -30,6 +30,7 @@ library Errors {
     error LzEndpointIdNotRegistered();
     error ManageFlashLoanReentrantCall();
     error MaxValueLossExceeded();
+    error MinOutputAmountExceedsInputAmount();
     error MismatchedLengths();
     error NegativeTokenPrice(address priceFeed);
     error NotFlashLoanModule();

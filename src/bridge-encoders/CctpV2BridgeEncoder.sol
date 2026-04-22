@@ -72,6 +72,10 @@ contract CctpV2BridgeEncoder is AccessManagedUpgradeable, ICctpV2BridgeEncoder {
     {
         uint32 destCctpDomain = getCctpDomain(order.destinationChainId);
 
+        if (order.minOutputAmount > order.inputAmount) {
+            revert Errors.MinOutputAmountExceedsInputAmount();
+        }
+
         (uint32 minFinalityThreshold) = abi.decode(order.extraData, (uint32));
 
         bytes32 recipient = bytes32(uint256(uint160(order.recipient)));

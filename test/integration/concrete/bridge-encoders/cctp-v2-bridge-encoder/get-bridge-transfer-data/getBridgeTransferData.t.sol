@@ -17,6 +17,16 @@ contract GetBridgeTransferData_CctpV2BridgeEncoder_Integration_Concrete_Test is
         cctpV2BridgeEncoder.getBridgeTransferData(order, false);
     }
 
+    function test_RevertWhen_MinOutputAmountExceedsInputAmount() public {
+        IBridgeComponent.BridgeOrder memory order;
+        order.destinationChainId = L2_CHAIN_ID;
+        order.inputAmount = 1e18;
+        order.minOutputAmount = 1e18 + 1;
+
+        vm.expectRevert(Errors.MinOutputAmountExceedsInputAmount.selector);
+        cctpV2BridgeEncoder.getBridgeTransferData(order, false);
+    }
+
     function test_GetBridgeTransferData_EmptyParams() public view {
         _test_GetBridgeTransferData_EmptyParams(false);
     }
