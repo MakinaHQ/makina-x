@@ -1,0 +1,21 @@
+{
+  "accessManager": "0x4B3336630e591D36ca81f0c25b798895289dDD30",
+  "weirollVM": "0xFD162A672928bf40E5A81F0D11501D2849841FA6",
+  "feeCollector": "0x0000000000000000000000000000000000000DA0",
+  "flashLoanProviders": {
+    "morpho": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+  },
+  "bridgesTargets": [
+    {
+      "bridgeId": 1,
+      "acrossV4SpokePool": "0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5"
+    },
+    {
+      "bridgeId": 2
+    },
+    {
+      "bridgeId": 3,
+      "cctpV2TokenMessenger": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d"
+    }
+  ]
+}

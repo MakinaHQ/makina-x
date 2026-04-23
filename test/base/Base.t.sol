@@ -76,7 +76,7 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
     }
 
     function _deployAccessManager(address _initialAMAdmin, address _proxyOwner) internal {
-        address implem = _deployCode(type(AccessManagerUpgradeable).creationCode);
+        address implem = _deployCode(type(AccessManagerUpgradeable).creationCode, 0);
         accessManager = AccessManagerUpgradeable(
             _deployCode(
                 abi.encodePacked(
@@ -84,12 +84,13 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
                     abi.encode(
                         implem, _proxyOwner, abi.encodeCall(AccessManagerUpgradeable.initialize, (_initialAMAdmin))
                     )
-                )
+                ),
+                0
             )
         );
     }
 
     function _deployWeirollVM() internal {
-        weirollVM = _deployCode(getWeirollVMCode());
+        weirollVM = _deployCode(getWeirollVMCode(), 0);
     }
 }

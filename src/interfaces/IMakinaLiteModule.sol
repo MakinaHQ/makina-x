@@ -2,12 +2,14 @@
 pragma solidity 0.8.34;
 
 import {IBridgeComponent} from "./IBridgeComponent.sol";
+import {IMakinaLiteContext} from "./IMakinaLiteContext.sol";
 import {IMakinaLiteGovernable} from "./IMakinaLiteGovernable.sol";
 import {IOracleRegistry} from "./IOracleRegistry.sol";
 import {ISwapComponent} from "./ISwapComponent.sol";
 import {IWeirollComponent} from "./IWeirollComponent.sol";
 
 interface IMakinaLiteModule is
+    IMakinaLiteContext,
     IMakinaLiteGovernable,
     IOracleRegistry,
     IWeirollComponent,

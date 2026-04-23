@@ -27,7 +27,7 @@ abstract contract BridgeComponent_Integration_Concrete_Test is Integration_Concr
     function setUp() public virtual override {
         Integration_Concrete_Test.setUp();
 
-        acrossV4SpokePool = IMockAcrossSpokePool(_deployCode(getMockAcrossSpokePoolCode()));
+        acrossV4SpokePool = IMockAcrossSpokePool(_deployCode(getMockAcrossSpokePoolCode(), 0));
 
         oftAdapter = new MockOFTAdapter(address(tokenA));
         oft = new MockOFT("Mock OFT", "MOFT");

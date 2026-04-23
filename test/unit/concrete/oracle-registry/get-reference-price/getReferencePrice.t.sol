@@ -3,7 +3,6 @@ pragma solidity 0.8.34;
 
 import {DecimalsUtils} from "src/libraries/DecimalsUtils.sol";
 import {Errors} from "src/libraries/Errors.sol";
-import {MockERC20} from "test/mocks/MockERC20.sol";
 import {MockPriceFeed} from "test/mocks/MockPriceFeed.sol";
 
 import {OracleRegistry_Unit_Concrete_Test} from "../OracleRegistry.t.sol";

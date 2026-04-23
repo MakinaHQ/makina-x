@@ -54,32 +54,52 @@ Guardians serve as emergency contacts that can halt module operations. The Safe 
 
 ## Infrastructure Roles
 
-The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured by the associated `AccessManager` instance.
+The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured by the associated `AccessManager` instance. Roles used by MakinaLite infrastructure contracts are a subset of those used in Makina Core, and are assigned at deployment.
 
 ### MakinaLiteRegistry
 
-- Can set the module factory address.
-- Can set the module implementation address.
-- Can set the fee collector address.
-- Can set the flash loan module address.
-- Can set bridge encoder addresses.
+- `INFRA_CONFIG_ROLE` (roleId `1`)
+  - Can set the address of ModuleFactory.
+  - Can set the address of the module implementation.
+  - Can set the address of the fee collector.
+  - Can set the address of the FlashLoanModule.
+  - Can set bridge encoder addresses.
+
+- `INFRA_UPGRADE_ROLE` (roleId `6`)
+  - Can upgrade implementation via associated ProxyAdmin.
 
 ### ModuleFactory
 
-- Can deploy new MakinaLiteModule clones.
+- `STRATEGY_DEPLOYMENT_ROLE` (roleId `2`)
+  - Can deploy new MakinaLiteModule clones.
+
+- `INFRA_UPGRADE_ROLE` (roleId `6`)
+  - Can upgrade implementation via associated ProxyAdmin.
 
 ### AcrossV4BridgeEncoder
 
-- Can add and remove token routes (input token to output token mappings per chain).
+- `INFRA_CONFIG_ROLE` (roleId `1`)
+  - Can add and remove token routes (input token to output token mappings per chain).
+
+- `INFRA_UPGRADE_ROLE` (roleId `6`)
+  - Can upgrade implementation via associated ProxyAdmin.
 
 ### CctpV2BridgeEncoder
 
-- Can set EVM chain ID to CCTP domain mappings.
+- `INFRA_CONFIG_ROLE` (roleId `1`)
+  - Can set mappings of EVM chain ID to CCTP domain.
+
+- `INFRA_UPGRADE_ROLE` (roleId `6`)
+  - Can upgrade implementation via associated ProxyAdmin.
 
 ### LayerZeroV2BridgeEncoder
 
-- Can set EVM chain ID to LayerZero endpoint ID mappings.
-- Can register and unregister OFT contracts.
+- `INFRA_CONFIG_ROLE` (roleId `1`)
+  - Can set mappings of EVM chain ID to LZ endpoint ID.
+  - Can register and unregister OFT contracts.
+
+- `INFRA_UPGRADE_ROLE` (roleId `6`)
+  - Can upgrade implementation via associated ProxyAdmin.
 
 ## Operational States
 

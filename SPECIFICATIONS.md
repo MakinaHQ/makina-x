@@ -136,4 +136,12 @@ The MakinaLite protocol uses two access control systems:
 
 **Module-level roles** — The `MakinaLiteGovernable` contract defines four roles: Safe, Provider, Operator, and Guardian. These are implemented as simple address mappings and modifiers. The Safe is the sole authority over configuration. Operators execute strategy actions. Guardians can pause the module. The provider manages service-level parameters and can suspend operations. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
 
-**Infrastructure roles** — The `MakinaLiteRegistry`, `ModuleFactory`, and Bridge Encoder contracts use OpenZeppelin's `AccessManagedUpgradeable`, delegating authorization to an external `AccessManager` instance. This allows fine-grained, centralized permission management for protocol infrastructure.
+**Infrastructure roles** — The `MakinaLiteRegistry`, `ModuleFactory`, and Bridge Encoder contracts implement [OpenZeppelin AccessManagedUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol), delegating authorization to an external `AccessManager` instance. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
+
+Roles used by MakinaLite infrastructure contracts are a subset of those used in Makina Core contracts, and are defined as follows:
+
+- `ADMIN_ROLE` - roleId `0` - Super admin of the Access Manager. Authorized to perform Access Manager configuration actions.
+- `INFRA_CONFIG_ROLE` - roleId `1` - Authorized to configure the MakinaLite registry and bridge encoder contracts.
+- `STRATEGY_DEPLOYMENT_ROLE` - roleId `2` - Authorized to deploy new MakinaLite modules.
+- `INFRA_UPGRADE_ROLE` - roleId `6` - Authorized to upgrade proxies of the MakinaLite infrastructure contracts.
+- `GUARDIAN_ROLE` - roleId `7` - Authorized to cancel operations scheduled with the other roles.
