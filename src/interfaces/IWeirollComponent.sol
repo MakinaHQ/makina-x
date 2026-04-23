@@ -124,6 +124,12 @@ interface IWeirollComponent {
         external
         returns (uint256[] memory values, int256[] memory changes);
 
+    /// @notice Manages flash loan funds.
+    /// @param instruction The flash loan management instruction.
+    /// @param token The loan token.
+    /// @param amount The loan amount.
+    function manageFlashLoan(Instruction calldata instruction, address token, uint256 amount) external;
+
     /// @notice Harvests one or multiple positions.
     /// @param instruction The harvest instruction.
     /// @param swapOrders The array of swap orders to be executed after the harvest.

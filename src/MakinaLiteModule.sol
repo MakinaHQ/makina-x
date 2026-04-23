@@ -144,6 +144,15 @@ contract MakinaLiteModule is
     }
 
     /// @inheritdoc IWeirollComponent
+    function manageFlashLoan(IWeirollComponent.Instruction calldata instruction, address token, uint256 amount)
+        external
+        override
+    {
+        address flashLoanModule = IMakinaLiteRegistry(registry).flashLoanModule();
+        _manageFlashLoan(instruction, token, amount, safe, flashLoanModule);
+    }
+
+    /// @inheritdoc IWeirollComponent
     function harvest(IWeirollComponent.Instruction calldata instruction, ISwapComponent.SwapOrder[] calldata swapOrders)
         external
         override
@@ -218,9 +227,7 @@ contract MakinaLiteModule is
         onlyOperator
     {
         address encoder = IMakinaLiteRegistry(registry).getBridgeEncoder(order.bridgeId);
-
-        _pullERC20FromSafe(order.inputToken, order.inputAmount);
-
+        _pullERC20FromSafe(order.inputToken, order.inputAmount, address(this));
         _sendOutBridgeTransfer(order, encoder, lockdownMode);
     }
 
@@ -255,7 +262,7 @@ contract MakinaLiteModule is
 
     /// @dev Internal logic to execute swap tokens on behalf of Safe using a given swapper.
     function _swapForSafe(ISwapComponent.SwapOrder calldata order) internal {
-        _pullERC20FromSafe(order.inputToken, order.inputAmount);
+        _pullERC20FromSafe(order.inputToken, order.inputAmount, address(this));
 
         uint256 amountOut = _swap(order, lockdownMode);
 
@@ -285,15 +292,20 @@ contract MakinaLiteModule is
         return baseTokenAmount.mulDiv(price, 10 ** DecimalsUtils._getDecimals(baseToken));
     }
 
+    /// @dev Transfers `amount` of ERC20 `token` from the Safe to the flash loan module via a module call.
+    function _refundFlashLoan(address token, uint256 amount, address flashLoanModule) internal override {
+        _pullERC20FromSafe(token, amount, flashLoanModule);
+    }
+
     /// @dev Transfers `amount` of ERC20 `token` from the Safe to this module via a module call.
-    function _pullERC20FromSafe(address token, uint256 amount) internal {
+    function _pullERC20FromSafe(address token, uint256 amount, address recipient) internal {
         if (token.code.length == 0) {
             revert Errors.InvalidInputToken();
         }
 
         (bool success, bytes memory returnData) = ISafe(safe)
             .execTransactionFromModuleReturnData(
-                token, 0, abi.encodeCall(IERC20.transfer, (address(this), amount)), ISafe.Operation.Call
+                token, 0, abi.encodeCall(IERC20.transfer, (recipient, amount)), ISafe.Operation.Call
             );
         returnData = Address.verifyCallResult(success, returnData);
         if (returnData.length > 0 && !abi.decode(returnData, (bool))) {

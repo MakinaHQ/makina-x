@@ -4,6 +4,7 @@ pragma solidity 0.8.34;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
+import {IFlashLoanModule} from "src/interfaces/IFlashLoanModule.sol";
 import {IWeirollComponent} from "../../src/interfaces/IWeirollComponent.sol";
 import {MerkleProofHelper} from "./MerkleProofHelper.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -469,6 +470,102 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
+            merkleProof
+        );
+    }
+
+    function _buildFlashLoanModuleDummyLoopInstruction(
+        uint256 _posId,
+        address _flashLoanModule,
+        address _makinaLiteModule,
+        address _token,
+        uint256 _amount,
+        IWeirollComponent.Instruction memory _manageFlashloanInstruction
+    ) internal view returns (IWeirollComponent.Instruction memory) {
+        bytes32[] memory commands = new bytes32[](1);
+        // "0xb1485fa00180ffffffffffff" + _flashLoanModule
+        commands[0] = _buildCommand(
+            IFlashLoanModule.requestFlashLoan.selector,
+            0x01, // call with extended flag
+            0x80ffffffffff, // 1 input : variable-length at index 0 of state
+            0xff, // ignore result
+            _flashLoanModule
+        );
+
+        IFlashLoanModule.FlashLoanRequest memory flashLoanRequest = IFlashLoanModule.FlashLoanRequest({
+            taker: address(_makinaLiteModule),
+            provider: IFlashLoanModule.FlashLoanProvider.MORPHO,
+            instruction: _manageFlashloanInstruction,
+            token: _token,
+            amount: _amount
+        });
+
+        bytes[] memory state = new bytes[](1);
+        state[0] = abi.encode(
+            flashLoanRequest.taker,
+            flashLoanRequest.provider,
+            flashLoanRequest.instruction,
+            flashLoanRequest.token,
+            flashLoanRequest.amount
+        );
+
+        bytes32[] memory merkleProof = _getDummyLoopMockFlashLoanModuleInstrProof();
+
+        return IWeirollComponent.Instruction(
+            _posId,
+            false,
+            0,
+            IWeirollComponent.InstructionType.MANAGEMENT,
+            new address[](0),
+            new address[](0),
+            commands,
+            state,
+            0,
+            merkleProof
+        );
+    }
+
+    function _buildMockFlashLoanModuleDummyAccountingInstruction(uint256 _posId)
+        internal
+        view
+        returns (IWeirollComponent.Instruction memory)
+    {
+        bytes[] memory state = new bytes[](1);
+        state[0] = abi.encode(ACCOUNTING_OUTPUT_STATE_END_OF_ARGS);
+
+        bytes32[] memory merkleProof = _getAccountingMockFlashLoanModuleInstrProof();
+
+        return IWeirollComponent.Instruction(
+            _posId,
+            false,
+            0,
+            IWeirollComponent.InstructionType.ACCOUNTING,
+            new address[](0),
+            new address[](0),
+            new bytes32[](0),
+            state,
+            0,
+            merkleProof
+        );
+    }
+
+    function _buildManageFlashLoanDummyInstruction(uint256 _posId)
+        internal
+        view
+        returns (IWeirollComponent.Instruction memory)
+    {
+        bytes32[] memory merkleProof = _getManageFlashLoanDummyInstrProof();
+
+        return IWeirollComponent.Instruction(
+            _posId,
+            false,
+            0,
+            IWeirollComponent.InstructionType.FLASHLOAN_MANAGEMENT,
+            new address[](0),
+            new address[](0),
+            new bytes32[](0),
+            new bytes[](0),
+            0,
             merkleProof
         );
     }

@@ -6,10 +6,11 @@ interface IMakinaLiteRegistry {
         uint16 indexed bridgeId, address indexed oldBridgeEncoder, address indexed newBridgeEncoder
     );
     event FeeCollectorChanged(address indexed oldFeeCollector, address indexed newFeeCollector);
+    event FlashLoanModuleChanged(address indexed oldFlashLoanModule, address indexed newFlashLoanModule);
     event ModuleFactoryChanged(address indexed oldModuleFactory, address indexed newModuleFactory);
     event ModuleImplementationChanged(address indexed oldModuleImplementation, address indexed newModuleImplementation);
 
-    /// @notice Address of the MakinaLite factory.
+    /// @notice Address of the MakinaLiteModule factory.
     function moduleFactory() external view returns (address);
 
     /// @notice Address of the MakinaLiteModule implementation.
@@ -17,6 +18,9 @@ interface IMakinaLiteRegistry {
 
     /// @notice Address of the fee collector.
     function feeCollector() external view returns (address);
+
+    /// @notice Address of the flash loan module.
+    function flashLoanModule() external view returns (address);
 
     /// @notice Bridge ID => Address of the corresponding bridge encoder.
     function getBridgeEncoder(uint16 bridgeId) external view returns (address);
@@ -32,6 +36,10 @@ interface IMakinaLiteRegistry {
     /// @notice Sets the address of the fee collector.
     /// @param newFeeCollector The address of the new fee collector.
     function setFeeCollector(address newFeeCollector) external;
+
+    /// @notice Sets the address of the flash loan module.
+    /// @param newFlashLoanModule The address of the new flash loan module.
+    function setFlashLoanModule(address newFlashLoanModule) external;
 
     /// @notice Sets a bridge encoder instance for a given bridge ID.
     /// @param bridgeId The ID of the bridge.

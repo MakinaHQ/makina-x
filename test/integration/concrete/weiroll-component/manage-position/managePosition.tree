@@ -11,54 +11,57 @@ managePosition.t.sol
          ├── when caller is not a registered operator
          │  └── it should revert with UnauthorizedCaller
          └── when caller is a registered operator
-            ├── when the first instruction is not of type management
-            │  └── it should revert with InvalidInstructionType
-            └── when the first instruction is of type management
-               ├── given the first instruction proof is not valid against the merkle root set in the module
-               │  └── it should revert with InvalidInstructionProof
-               └── given the first instruction proof is valid against the merkle root set in the module
-                  ├── given lockdown mode is off
-                  │  ├── when a second instruction is provided
-                  │  │  ├── when the 2 instructions position IDs or isDebt flags do not match
-                  │  │  │  └── it should revert with InstructionsMismatch
-                  │  │  └── when the 2 instructions position IDs and isDebt flags match
-                  │  │     ├── given the second instruction proof is not valid against the merkle root set in the module
-                  │  │     │  └── it should revert with InvalidInstructionProof
-                  │  │     └── given the second instruction proof is valid against the merkle root set in the module
-                  │  │        ├── given the second instruction execution fails
-                  │  │        │  └── it should revert
-                  │  │        └── given the second instruction execution succeeds
-                  │  │           ├── given the second instruction does not output a valid state
-                  │  │           │  └── it should revert with InvalidAccounting
-                  │  │           └── given the second instruction outputs a valid state
-                  │  │              ├── when an instruction's affected tokens list contains tokens for which price data is not registered
-                  │  │              │  └── it should revert with PriceFeedRouteNotRegistered
-                  │  │              └── when instructions affected tokens list only contains tokens with registered price data
-                  │  │                 ├── given the first instruction execution fails
-                  │  │                 │  └── it should revert
-                  │  │                 └── given the first instruction execution succeeds
-                  │  │                    └── it should emit a PositionManaged event, including new position value
-                  │  └── when no second instruction is provided
-                  │     ├── given the first instruction execution fails
-                  │     │  └── it should revert
-                  │     └── given the first instruction execution succeeds
-                  │        └── it should emit a PositionManaged event, including 0 as position value
-                  └── given lockdown mode is on
-                     ├── when no second instruction is provided
-                     │  └── it should revert with AccountingMandatory
-                     └── when a second instruction is provided
-                        ├── given the module's safe globally spends tokens and the position value moves in wrong direction
-                        │  └── it should revert with InvalidPositionChangeDirection
-                        └── given the module's safe globally receives tokens or the position moves in expected direction
-                           ├── given the position value increased
-                           │     ├── given the relative value loss in the caliber is greater than maxPositionIncreaseLossBps
-                           │     │  └── it should revert with MaxValueLossExceeded
-                           │     └── given the relative value loss in the caliber is not greater than maxPositionIncreaseLossBps
-                           │        ├── it should emit a PositionManaged event, including new position value
-                           │        └── it should return the resulting new value and the value change resulting from management
-                           └── given the position value did not increase
-                              ├── given the relative value loss in the caliber is greater than maxPositionDecreaseLossBps
-                              │  └── it should revert with MaxValueLossExceeded
-                              └── given the relative value loss in the caliber is not greater than maxPositionDecreaseLossBps
-                                 ├── it should emit a PositionManaged event, including new position value
-                                 └── it should return the resulting new value and the value change resulting from management
+            ├── when the first instruction position ID is null
+            │  └── it should revert with ZeroPositionId
+            └── when the first instruction position ID is non null
+               ├── when the first instruction is not of type management
+               │  └── it should revert with InvalidInstructionType
+               └── when the first instruction is of type management
+                  ├── given the first instruction proof is not valid against the merkle root set in the module
+                  │  └── it should revert with InvalidInstructionProof
+                  └── given the first instruction proof is valid against the merkle root set in the module
+                     ├── given lockdown mode is off
+                     │  ├── when a second instruction is provided
+                     │  │  ├── when the 2 instructions position IDs or isDebt flags do not match
+                     │  │  │  └── it should revert with InstructionsMismatch
+                     │  │  └── when the 2 instructions position IDs and isDebt flags match
+                     │  │     ├── given the second instruction proof is not valid against the merkle root set in the module
+                     │  │     │  └── it should revert with InvalidInstructionProof
+                     │  │     └── given the second instruction proof is valid against the merkle root set in the module
+                     │  │        ├── given the second instruction execution fails
+                     │  │        │  └── it should revert
+                     │  │        └── given the second instruction execution succeeds
+                     │  │           ├── given the second instruction does not output a valid state
+                     │  │           │  └── it should revert with InvalidAccounting
+                     │  │           └── given the second instruction outputs a valid state
+                     │  │              ├── when an instruction's affected tokens list contains tokens for which price data is not registered
+                     │  │              │  └── it should revert with PriceFeedRouteNotRegistered
+                     │  │              └── when instructions affected tokens list only contains tokens with registered price data
+                     │  │                 ├── given the first instruction execution fails
+                     │  │                 │  └── it should revert
+                     │  │                 └── given the first instruction execution succeeds
+                     │  │                    └── it should emit a PositionManaged event, including new position value
+                     │  └── when no second instruction is provided
+                     │     ├── given the first instruction execution fails
+                     │     │  └── it should revert
+                     │     └── given the first instruction execution succeeds
+                     │        └── it should emit a PositionManaged event, including 0 as position value
+                     └── given lockdown mode is on
+                        ├── when no second instruction is provided
+                        │  └── it should revert with AccountingMandatory
+                        └── when a second instruction is provided
+                           ├── given the module's safe globally spends tokens and the position value moves in wrong direction
+                           │  └── it should revert with InvalidPositionChangeDirection
+                           └── given the module's safe globally receives tokens or the position moves in expected direction
+                              ├── given the position value increased
+                              │     ├── given the relative value loss in the caliber is greater than maxPositionIncreaseLossBps
+                              │     │  └── it should revert with MaxValueLossExceeded
+                              │     └── given the relative value loss in the caliber is not greater than maxPositionIncreaseLossBps
+                              │        ├── it should emit a PositionManaged event, including new position value
+                              │        └── it should return the resulting new value and the value change resulting from management
+                              └── given the position value did not increase
+                                 ├── given the relative value loss in the caliber is greater than maxPositionDecreaseLossBps
+                                 │  └── it should revert with MaxValueLossExceeded
+                                 └── given the relative value loss in the caliber is not greater than maxPositionDecreaseLossBps
+                                    ├── it should emit a PositionManaged event, including new position value
+                                    └── it should return the resulting new value and the value change resulting from management

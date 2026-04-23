@@ -67,6 +67,16 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         makinaLiteModule.managePosition(dummyInstruction, dummyInstruction);
     }
 
+    function test_RevertWhen_PositionIdZero() public {
+        IWeirollComponent.Instruction memory mgmtInstruction =
+            _build4626DepositInstruction(address(safe), 0, address(vault), 0);
+        IWeirollComponent.Instruction memory acctInstruction =
+            _build4626AccountingInstruction(address(safe), 0, address(vault));
+        vm.prank(operator);
+        vm.expectRevert(Errors.ZeroPositionId.selector);
+        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+    }
+
     function test_RevertWhen_ProvidedFirstInstructionNonManagementType() public {
         IWeirollComponent.Instruction memory acctInstruction =
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));

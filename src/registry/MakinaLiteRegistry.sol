@@ -14,6 +14,7 @@ contract MakinaLiteRegistry is AccessManagedUpgradeable, IMakinaLiteRegistry {
         address _moduleFactory;
         address _moduleImplementation;
         address _feeCollector;
+        address _flashLoanModule;
         mapping(uint16 bridgeId => address encoder) _bridgeEncoders;
     }
 
@@ -47,6 +48,11 @@ contract MakinaLiteRegistry is AccessManagedUpgradeable, IMakinaLiteRegistry {
     }
 
     /// @inheritdoc IMakinaLiteRegistry
+    function flashLoanModule() external view override returns (address) {
+        return _getMakinaLiteRegistryStorage()._flashLoanModule;
+    }
+
+    /// @inheritdoc IMakinaLiteRegistry
     function getBridgeEncoder(uint16 bridgeId) external view returns (address) {
         address encoder = _getMakinaLiteRegistryStorage()._bridgeEncoders[bridgeId];
         if (encoder == address(0)) {
@@ -74,6 +80,13 @@ contract MakinaLiteRegistry is AccessManagedUpgradeable, IMakinaLiteRegistry {
         MakinaLiteRegistryStorage storage $ = _getMakinaLiteRegistryStorage();
         emit FeeCollectorChanged($._feeCollector, newFeeCollector);
         $._feeCollector = newFeeCollector;
+    }
+
+    /// @inheritdoc IMakinaLiteRegistry
+    function setFlashLoanModule(address newFlashLoanModule) external restricted {
+        MakinaLiteRegistryStorage storage $ = _getMakinaLiteRegistryStorage();
+        emit FlashLoanModuleChanged($._flashLoanModule, newFlashLoanModule);
+        $._flashLoanModule = newFlashLoanModule;
     }
 
     /// @inheritdoc IMakinaLiteRegistry
