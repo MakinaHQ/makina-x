@@ -16,6 +16,10 @@ Each module is deployed as a minimal clone via the `ModuleFactory` and initializ
 - Can execute token swaps through configured DEX aggregators.
 - Can send outgoing bridge transfers to other chains.
 
+#### Fund Custody
+
+The module isn't meant to hold ERC20 balances between operations. Swaps, bridges, and flash loans pull inputs from the Safe and forward outputs back within the same call, while Weiroll instructions run directly in the Safe's context. `sweepERC20` (Safe-only) recovers any ERC20 that lands on the module by mistake.
+
 ### Position Management
 
 Position management is handled by the `WeirollComponent`, which leverages the [Weiroll](https://github.com/EnsoBuild/enso-weiroll) command-chaining framework to execute DeFi operations through the Safe via delegatecall.
@@ -51,10 +55,12 @@ The protocol relies on specific assumptions on the instructions. Some are always
   - Their output state must start with an ordered list of amounts (one amount per slot) matching the order of `affectedTokens`, followed by an end-of-args flag.
 - **MANAGEMENT**:
   - The `affectedTokens` list must include exactly all tokens spent by the instruction.
+  - They should not leave persistent ERC20 approvals from the Safe to external contracts. Any approval granted during execution should be consumed or revoked before the instruction returns.
 - **HARVEST**:
   - They should be restricted to receive-only operations and should not spend any tokens that are initially held by the Safe.
 - **FLASHLOAN_MANAGEMENT**:
   - They must not result in token balance changes for tokens that are not in the `affectedTokens` list of the associated `MANAGEMENT` instruction.
+  - They should not leave persistent ERC20 approvals from the Safe to external contracts.
 
 ### SwapModule
 
@@ -100,6 +106,8 @@ When lockdown mode is enabled, bridge transfers enforce:
 **Circle CCTP V2** (`CctpV2BridgeEncoder`): Bridges tokens through Circle's Cross-Chain Transfer Protocol using `depositForBurnWithHook`. Maintains a mapping of EVM chain IDs to CCTP domains.
 
 **LayerZero V2** (`LayerZeroV2BridgeEncoder`): Bridges tokens through LayerZero's OFT (Omnichain Fungible Token) standard. Maintains mappings of EVM chain IDs to LayerZero endpoint IDs and a registry of allowed OFT contracts. In lockdown mode, only registered OFTs are allowed.
+
+LayerZero transfers require a native gas fee to be paid alongside the transfer. The module therefore needs to hold a small native balance as a gas buffer. `sweepNative` (Safe-only) allows the Safe to recover this balance at any time.
 
 ### Flash Loans
 
