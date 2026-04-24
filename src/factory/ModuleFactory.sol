@@ -40,7 +40,7 @@ contract ModuleFactory is MakinaLiteContext, AccessManagedUpgradeable, IModuleFa
     }
 
     /// @inheritdoc IModuleFactory
-    function createModule(IMakinaLiteModule.MakinaLiteModuleInitParams memory params, bytes32 salt)
+    function createModule(IMakinaLiteModule.MakinaLiteModuleInitParams calldata params, bytes32 salt)
         external
         restricted
         returns (address)

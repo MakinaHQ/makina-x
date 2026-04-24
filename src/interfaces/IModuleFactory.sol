@@ -13,7 +13,7 @@ interface IModuleFactory {
     /// @param params The initialization parameters for the MakinaLiteModule.
     /// @param salt The salt used for deterministic deployment of the module clone.
     /// @return The address of the newly deployed MakinaLiteModule.
-    function createModule(IMakinaLiteModule.MakinaLiteModuleInitParams memory params, bytes32 salt)
+    function createModule(IMakinaLiteModule.MakinaLiteModuleInitParams calldata params, bytes32 salt)
         external
         returns (address);
 }

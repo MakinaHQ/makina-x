@@ -44,7 +44,7 @@ contract MakinaLiteModule is
     }
 
     /// @inheritdoc IMakinaLiteModule
-    function initialize(MakinaLiteModuleInitParams memory params) external override initializer {
+    function initialize(MakinaLiteModuleInitParams calldata params) external override initializer {
         __MakinaLiteGovernable(params.safe, params.initialProvider);
 
         _setAllowedInstrRoot(params.initialAllowedInstrRoot);

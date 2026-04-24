@@ -36,7 +36,7 @@ interface IMakinaLiteModule is
 
     /// @notice Initializes the module with the given parameters.
     /// @param params The initialization parameters.
-    function initialize(MakinaLiteModuleInitParams memory params) external;
+    function initialize(MakinaLiteModuleInitParams calldata params) external;
 
     /// @notice Sweeps the entire balance of a given ERC20 token to the caller.
     /// @param token The address of the ERC20 token to sweep.
