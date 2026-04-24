@@ -42,7 +42,6 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         makinaLiteModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        vm.prank(operator);
         makinaLiteModule.harvest(instruction, swapOrders);
 
         // module suspended + paused
@@ -50,7 +49,6 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         makinaLiteModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.harvest(instruction, swapOrders);
 
         // module suspended
@@ -58,7 +56,6 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         makinaLiteModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.harvest(instruction, swapOrders);
     }
 

@@ -2,7 +2,6 @@
 pragma solidity 0.8.34;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -12,7 +11,6 @@ import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
 import {Errors} from "../libraries/Errors.sol";
 
 abstract contract BridgeComponent is IBridgeComponent {
-    using EnumerableSet for EnumerableSet.AddressSet;
     using Math for uint256;
     using SafeERC20 for IERC20;
 
@@ -20,7 +18,7 @@ abstract contract BridgeComponent is IBridgeComponent {
     uint256 private constant MAX_BPS = 10_000;
 
     mapping(uint16 bridgeId => uint256 maxBridgeLossBps) private _maxBridgeLossBps;
-    mapping(uint256 evmChainId => mapping(address recipient => bool isWhitelisted)) private _isWhitelistedRecipient;
+    mapping(uint256 foreignChainId => mapping(address recipient => bool isWhitelisted)) private _isWhitelistedRecipient;
 
     /// @inheritdoc IBridgeComponent
     function getMaxBridgeLossBps(uint16 bridgeId) external view returns (uint256) {
@@ -28,8 +26,8 @@ abstract contract BridgeComponent is IBridgeComponent {
     }
 
     /// @inheritdoc IBridgeComponent
-    function isWhitelistedRecipient(uint256 evmChainId, address recipient) external view returns (bool) {
-        return _isWhitelistedRecipient[evmChainId][recipient];
+    function isWhitelistedRecipient(uint256 foreignChainId, address recipient) external view returns (bool) {
+        return _isWhitelistedRecipient[foreignChainId][recipient];
     }
 
     function _sendOutBridgeTransfer(IBridgeComponent.BridgeOrder calldata order, address encoder, bool lockdownMode)
@@ -55,6 +53,10 @@ abstract contract BridgeComponent is IBridgeComponent {
 
         // Requires `address(this).balance >= value` when `value` > 0.
         Address.functionCallWithValue(executionTarget, cd, value);
+
+        if (approvalTarget != address(0)) {
+            IERC20(order.inputToken).forceApprove(approvalTarget, 0);
+        }
     }
 
     /// @dev Internal logic to set the max allowed value loss in basis points for transfers via a given bridge.

@@ -38,7 +38,6 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         makinaLiteModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        vm.prank(operator);
         makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
 
         // module suspended + paused
@@ -46,7 +45,6 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         makinaLiteModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
 
         // module suspended
@@ -54,7 +52,6 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         makinaLiteModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
     }
 

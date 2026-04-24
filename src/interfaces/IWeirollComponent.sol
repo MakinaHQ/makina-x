@@ -13,7 +13,7 @@ interface IWeirollComponent {
         uint256 oldMaxPositionDecreaseLossBps, uint256 newMaxPositionDecreaseLossBps
     );
     event PositionManaged(
-        bool indexed withValuation, bool indexed withAccountingChecks, uint256 indexed positionId, uint256 value
+        bool indexed withValuation, bool indexed lockdownMode, uint256 indexed positionId, uint256 value
     );
 
     enum InstructionType {
@@ -64,52 +64,48 @@ interface IWeirollComponent {
     /// @notice Max allowed value loss (in basis points) when decreasing a position, while in lockdown mode.
     function maxPositionDecreaseLossBps() external view returns (uint256);
 
-    /// @notice Accounts for a position.
+    /// @notice Prices a position.
     /// @dev If the position value goes to zero, it is closed.
     /// @param instruction The accounting instruction.
     /// @return value The new position value.
     function accountForPosition(Instruction calldata instruction) external returns (uint256 value);
 
-    /// @notice Accounts for a batch of positions.
+    /// @notice Prices a batch of positions.
     /// @param instructions The array of accounting instructions.
-    /// @param groupIds The array of position group IDs.
-    ///        An accounting instruction must be provided for every open position in each specified group.
-    ///        If an instruction's groupId corresponds to a group of open positions of size greater than 1,
-    ///        the group ID must be included in this array.
+    /// @param groupIds Ignored parameter kept to preserve interface compatibility with Makina Core.
     /// @return values The new position values.
     function accountForPositionBatch(Instruction[] calldata instructions, uint256[] calldata groupIds)
         external
         returns (uint256[] memory values);
 
-    /// @notice Manages a position's state through paired management and accounting instructions
-    /// @dev Performs accounting updates and modifies contract storage by:
-    /// - Adding new positions to storage when created.
-    /// - Removing positions from storage when value reaches zero.
-    /// @dev Applies value preservation checks using a validation matrix to prevent
-    /// economic inconsistencies between position changes and token flows.
+    /// @notice Manages a position's state through paired management and accounting instructions.
+    /// @dev If `acctInstruction` is provided, it is executed before and after the management instruction to
+    /// compute the new position value and its signed delta.
+    /// @dev In lockdown mode, `acctInstruction` must be provided and value preservation checks are applied using
+    /// a validation matrix to prevent economic inconsistencies between position changes and token flows.
     ///
-    /// The matrix evaluates three factors to determine required validations:
-    /// - Base Token flow - Whether the contract globally spent or received base tokens during operation
+    /// The lockdown mode matrix evaluates three factors to determine required validations:
+    /// - Affected Tokens flow - Sign of the change in the Safe's aggregate value of `mgmtInstruction.affectedTokens`
     /// - Debt Position - Whether position represents protocol liability (true) vs asset (false)
-    /// - Position Δ direction - Direction of position value change (increase/decrease)
+    /// - Position Δ direction - Direction of position value change (increase/decrease/null)
     ///
-    /// ┌─────────────────┬───────────────┬──────────────────────┬───────────────────────────┐
-    /// │ Base Token flow │ Debt Position │ Position Δ direction │ Action                    │
-    /// ├─────────────────┼───────────────┼──────────────────────┼───────────────────────────┤
-    /// │ Outflow         │ No            │ Decrease             │ Revert: Invalid direction │
-    /// │ Outflow         │ Yes           │ Increase             │ Revert: Invalid direction │
-    /// │ Outflow         │ No            │ Increase / Null      │ Minimum Δ Check           │
-    /// │ Outflow         │ Yes           │ Decrease / Null      │ Minimum Δ Check           │
-    /// │ Inflow / Null   │ No            │ Decrease             │ Maximum Δ Check           │
-    /// │ Inflow / Null   │ Yes           │ Increase             │ Maximum Δ Check           │
-    /// │ Inflow / Null   │ No            │ Increase / Null      │ No check (favorable move) │
-    /// │ Inflow / Null   │ Yes           │ Decrease / Null      │ No check (favorable move) │
-    /// └─────────────────┴───────────────┴──────────────────────┴───────────────────────────┘
+    /// ┌──────────────────────┬───────────────┬──────────────────────┬───────────────────────────┐
+    /// │ Affected Tokens flow │ Debt Position │ Position Δ direction │ Action                    │
+    /// ├──────────────────────┼───────────────┼──────────────────────┼───────────────────────────┤
+    /// │ Outflow              │ No            │ Decrease             │ Revert: Invalid direction │
+    /// │ Outflow              │ Yes           │ Increase             │ Revert: Invalid direction │
+    /// │ Outflow              │ No            │ Increase / Null      │ Minimum Δ Check           │
+    /// │ Outflow              │ Yes           │ Decrease / Null      │ Minimum Δ Check           │
+    /// │ Inflow / Null        │ No            │ Decrease             │ Maximum Δ Check           │
+    /// │ Inflow / Null        │ Yes           │ Increase             │ Maximum Δ Check           │
+    /// │ Inflow / Null        │ No            │ Increase / Null      │ No check (favorable move) │
+    /// │ Inflow / Null        │ Yes           │ Decrease / Null      │ No check (favorable move) │
+    /// └──────────────────────┴───────────────┴──────────────────────┴───────────────────────────┘
     ///
     /// @param mgmtInstruction The management instruction.
     /// @param acctInstruction The accounting instruction.
-    /// @return value The new position value.
-    /// @return change The signed position value delta.
+    /// @return value The new position value, or 0 if `acctInstruction` was not provided.
+    /// @return change The signed position value delta, or 0 if `acctInstruction` was not provided.
     function managePosition(Instruction calldata mgmtInstruction, Instruction calldata acctInstruction)
         external
         returns (uint256 value, int256 change);

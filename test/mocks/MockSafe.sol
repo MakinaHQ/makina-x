@@ -17,14 +17,6 @@ contract MockSafe is ISafe {
         }
     }
 
-    function execTransactionFromModule(address to, uint256 value, bytes memory data, Operation operation)
-        external
-        override
-        returns (bool success)
-    {
-        (success,) = _execute(to, value, data, operation);
-    }
-
     function execTransactionFromModuleReturnData(address to, uint256 value, bytes memory data, Operation operation)
         external
         override

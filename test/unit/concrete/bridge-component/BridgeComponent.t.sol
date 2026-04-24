@@ -22,6 +22,12 @@ contract Getters_Setters_BridgeComponent_Unit_Concrete_Test is BridgeComponent_U
         bridgeComponent.setMaxBridgeLossBps(0, 0);
     }
 
+    function test_SetMaxBridgeLossBps_RevertWhen_InvalidBpsValue() public {
+        vm.expectRevert(Errors.InvalidBpsValue.selector);
+        vm.prank(address(safe));
+        bridgeComponent.setMaxBridgeLossBps(0, 10_001);
+    }
+
     function test_SetMaxBridgeLossBps() public {
         uint256 newMaxBridgeLossBps = 300;
 

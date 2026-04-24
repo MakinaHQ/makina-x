@@ -28,7 +28,10 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
     /// @inheritdoc IMakinaLiteGovernable
     bool public override lockdownMode;
 
-    function __MakinaLiteGovernable(address _safe, address _provider) internal onlyInitializing {
+    function __MakinaLiteGovernable_init(address _safe, address _provider) internal onlyInitializing {
+        if (_safe == address(0)) {
+            revert Errors.ZeroAddress();
+        }
         safe = _safe;
         _addGuardian(_safe);
         _setProvider(_provider);
@@ -74,7 +77,9 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
 
     /// @inheritdoc IMakinaLiteGovernable
     function setProvider(address newProvider) external override onlyProvider {
-        _setProvider(newProvider);
+        if (newProvider != provider) {
+            _setProvider(newProvider);
+        }
     }
 
     /// @inheritdoc IMakinaLiteGovernable
@@ -97,6 +102,9 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
 
     /// @inheritdoc IMakinaLiteGovernable
     function addGuardian(address newGuardian) external override onlySafe {
+        if (isGuardian[newGuardian]) {
+            revert Errors.AlreadyGuardian();
+        }
         _addGuardian(newGuardian);
     }
 
@@ -154,18 +162,12 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
 
     /// @dev Internal function to update the MakinaLite service account.
     function _setProvider(address newProvider) internal {
-        if (newProvider == provider) {
-            return;
-        }
         emit ProviderChanged(provider, newProvider);
         provider = newProvider;
     }
 
     /// @dev Internal logic to add a new guardian.
     function _addGuardian(address newGuardian) internal {
-        if (isGuardian[newGuardian]) {
-            revert Errors.AlreadyGuardian();
-        }
         isGuardian[newGuardian] = true;
         emit GuardianAdded(newGuardian);
     }

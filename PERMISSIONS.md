@@ -105,8 +105,8 @@ The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `
 
 The module has three operational states that can restrict its functionality:
 
-| State             | Set by   | Effect                                                                                                                                                                                                                    |
-| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Paused**        | Guardian | Blocks all operator actions.                                                                                                                                                                                              |
-| **Suspended**     | Provider | Blocks all operator actions.                                                                                                                                                                                              |
-| **Lockdown Mode** | Safe     | Enforces additional safety checks: instruction Merkle proof verification, position value loss limits, swap value loss limits, bridge value loss limits, bridge recipient whitelisting, and OFT/route registration checks. |
+| State             | Set by   | Effect                                                                                                                                                                             |
+| ----------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Paused**        | Guardian | Blocks all operator actions.                                                                                                                                                       |
+| **Suspended**     | Provider | Blocks all operator actions.                                                                                                                                                       |
+| **Lockdown Mode** | Safe     | Enforces additional safety checks: position value loss limits, swap value loss limits, bridge value loss limits, bridge recipient whitelisting, and OFT/route registration checks. |

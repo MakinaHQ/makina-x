@@ -49,11 +49,11 @@ contract FlashLoanModule is IFlashLoanModule {
 
     /// @inheritdoc IMorphoFlashLoanCallback
     function onMorphoFlashLoan(uint256 assets, bytes calldata data) external {
-        _consumeExpectedDataHash(data);
-
         if (msg.sender != morpho) {
             revert Errors.NotMorpho();
         }
+
+        _consumeExpectedDataHash(data);
 
         (address token, address makinaLiteModule, IWeirollComponent.Instruction memory instruction) =
             abi.decode(data, (address, address, IWeirollComponent.Instruction));

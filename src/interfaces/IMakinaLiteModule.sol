@@ -20,10 +20,10 @@ interface IMakinaLiteModule is
     /// @param safe The address of the Safe that the module will be connected to.
     /// @param initialProvider The address of the MakinaLite service account.
     /// @param initialAllowedInstrRoot The root of the Merkle tree containing the allowed instructions for the module.
-    /// @param initialMaxPositionIncreaseLossBps The max allowed value loss (in basis point) for position increases, while in lockdown mode.
-    /// @param initialMaxPositionDecreaseLossBps The max allowed value loss (in basis point) for position decreases, while in lockdown mode.
+    /// @param initialMaxPositionIncreaseLossBps The max allowed value loss (in basis points) for position increases, while in lockdown mode.
+    /// @param initialMaxPositionDecreaseLossBps The max allowed value loss (in basis points) for position decreases, while in lockdown mode.
     /// @param initialMaxSwapLossBps The maximum allowed loss in basis points for swap operations, while in lockdown mode.
-    /// @param initialSwapFeeRate The fee rate in basis points for swap operations.
+    /// @param initialSwapFeeRate The fee rate for swap operations, 1e18 = 100%.
     struct MakinaLiteModuleInitParams {
         address safe;
         address initialProvider;
@@ -38,10 +38,10 @@ interface IMakinaLiteModule is
     /// @param params The initialization parameters.
     function initialize(MakinaLiteModuleInitParams calldata params) external;
 
-    /// @notice Sweeps the entire balance of a given ERC20 token to the caller.
+    /// @notice Sweeps the entire balance of a given ERC20 token to the Safe.
     /// @param token The address of the ERC20 token to sweep.
     function sweepERC20(address token) external;
 
-    /// @notice Sweeps the entire native currency balance (e.g. ETH) to the caller.
+    /// @notice Sweeps the entire native currency balance (e.g. ETH) to the Safe.
     function sweepNative() external;
 }

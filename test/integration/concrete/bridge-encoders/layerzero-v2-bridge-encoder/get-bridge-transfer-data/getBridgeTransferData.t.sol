@@ -59,7 +59,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
     }
 
-    function test_RevertGiven_MaxValueLossExceeded() public {
+    function test_RevertGiven_AmountOutTooLow() public {
         uint256 expectedFee = DEFAULT_LAYER_ZERO_V2_LZ_VERIFY_GAS * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
 
         IBridgeComponent.BridgeOrder memory order;
@@ -71,7 +71,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
 
         oft.setFaultyModeReceive(true);
 
-        vm.expectRevert(Errors.MaxValueLossExceeded.selector);
+        vm.expectRevert(Errors.AmountOutTooLow.selector);
         layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
     }
 

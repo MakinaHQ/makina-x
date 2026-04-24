@@ -4,7 +4,6 @@ pragma solidity 0.8.34;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IBridgeComponent} from "../interfaces/IBridgeComponent.sol";
 import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
@@ -13,8 +12,6 @@ import {ICctpV2TokenMessenger} from "../interfaces/ICctpV2TokenMessenger.sol";
 import {Errors} from "../libraries/Errors.sol";
 
 contract CctpV2BridgeEncoder is AccessManagedUpgradeable, ICctpV2BridgeEncoder {
-    using Math for uint256;
-
     uint256 private constant MAINNET_CHAIN_ID = 1;
     uint32 private constant MAINNET_CCTP_DOMAIN = 0;
 

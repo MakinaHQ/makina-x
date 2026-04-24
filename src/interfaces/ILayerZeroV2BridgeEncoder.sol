@@ -4,7 +4,7 @@ pragma solidity 0.8.34;
 import {IBridgeEncoder} from "./IBridgeEncoder.sol";
 
 interface ILayerZeroV2BridgeEncoder is IBridgeEncoder {
-    event LzEndpointIdRegistered(uint256 indexed evmChainId, uint32 indexed lzChainId);
+    event LzEndpointIdRegistered(uint256 indexed evmChainId, uint32 indexed lzEndpointId);
     event OftAdded(address indexed oft);
     event OftRemoved(address indexed oft);
 

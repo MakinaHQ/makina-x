@@ -31,10 +31,18 @@ contract CreateModule_Integration_Concrete_Test is Integration_Concrete_Test {
     function test_RevertWhen_SaltAlreadyUsed() public {
         IMakinaLiteModule.MakinaLiteModuleInitParams memory params;
 
-        vm.startPrank(dao);
-
+        vm.prank(dao);
         vm.expectRevert(OZErrors.FailedDeployment.selector);
         moduleFactory.createModule(params, TEST_DEPLOYMENT_SALT);
+    }
+
+    function test_RevertWhen_ZeroSafe() public {
+        IMakinaLiteModule.MakinaLiteModuleInitParams memory params;
+        bytes32 salt = bytes32(uint256(TEST_DEPLOYMENT_SALT) + 1);
+
+        vm.prank(dao);
+        vm.expectRevert(Errors.ZeroAddress.selector);
+        moduleFactory.createModule(params, salt);
     }
 
     function test_CreateModule() public {

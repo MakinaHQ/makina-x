@@ -55,7 +55,6 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         makinaLiteModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        vm.prank(operator);
         makinaLiteModule.accountForPosition(instruction);
 
         // module suspended + paused
@@ -63,7 +62,6 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         makinaLiteModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.accountForPosition(instruction);
 
         // module suspended
@@ -71,7 +69,6 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         makinaLiteModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        vm.prank(operator);
         makinaLiteModule.accountForPosition(instruction);
     }
 

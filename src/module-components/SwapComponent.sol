@@ -46,7 +46,7 @@ abstract contract SwapComponent is ISwapComponent {
         uint256 balBefore = IERC20(order.outputToken).balanceOf(address(this));
 
         IERC20(order.inputToken).forceApprove(approvalTarget, order.inputAmount);
-        // solhint-disable-next-line
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success,) = executionTarget.call(order.data);
         if (!success) {
             revert Errors.SwapFailed();

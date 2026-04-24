@@ -13,5 +13,6 @@ interface IBridgeEncoder {
     /// @return cd The calldata to execute.
     function getBridgeTransferData(IBridgeComponent.BridgeOrder calldata order, bool lockdownMode)
         external
+        view
         returns (address approvalTarget, address executionTarget, uint256 value, bytes memory cd);
 }

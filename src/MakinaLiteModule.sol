@@ -45,7 +45,7 @@ contract MakinaLiteModule is
 
     /// @inheritdoc IMakinaLiteModule
     function initialize(MakinaLiteModuleInitParams calldata params) external override initializer {
-        __MakinaLiteGovernable(params.safe, params.initialProvider);
+        __MakinaLiteGovernable_init(params.safe, params.initialProvider);
 
         _setAllowedInstrRoot(params.initialAllowedInstrRoot);
 
@@ -112,7 +112,7 @@ contract MakinaLiteModule is
             values[i] = _accountForPosition(instructions[i], true, safe);
         }
 
-        return (values);
+        return values;
     }
 
     /// @inheritdoc IWeirollComponent
@@ -157,8 +157,8 @@ contract MakinaLiteModule is
         external
         override
         nonReentrant
-        onlyOperator
         whenOperational
+        onlyOperator
     {
         _harvest(instruction, safe);
 
@@ -234,6 +234,7 @@ contract MakinaLiteModule is
 
     /// @inheritdoc IBridgeComponent
     function setMaxBridgeLossBps(uint16 bridgeId, uint256 maxBridgeLossBps) external override onlySafe {
+        _checkBps(maxBridgeLossBps);
         _setMaxBridgeLossBps(bridgeId, maxBridgeLossBps);
     }
 

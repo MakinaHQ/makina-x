@@ -15,12 +15,14 @@ contract SetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Con
     }
 
     function test_RevertWhen_ZeroChainId() public {
-        vm.startPrank(dao);
-
         vm.expectRevert(abi.encodeWithSelector(Errors.ZeroChainId.selector));
+        vm.prank(dao);
         layerZeroV2BridgeEncoder.setLzEndpointId(0, 1);
+    }
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ZeroChainId.selector));
+    function test_RevertWhen_ZeroEndpointId() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.ZeroLzEndpointId.selector));
+        vm.prank(dao);
         layerZeroV2BridgeEncoder.setLzEndpointId(1, 0);
     }
 
@@ -47,7 +49,7 @@ contract SetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Con
         assertEq(layerZeroV2BridgeEncoder.getLzEndpointId(2), 2);
     }
 
-    function test_SetLzEndpointId_ReassignLzChainId() public {
+    function test_SetLzEndpointId_ReassignLzEndpointId() public {
         vm.startPrank(dao);
 
         layerZeroV2BridgeEncoder.setLzEndpointId(1, 1);

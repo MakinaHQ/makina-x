@@ -4,7 +4,6 @@ pragma solidity 0.8.34;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IBridgeComponent} from "../interfaces/IBridgeComponent.sol";
 import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
@@ -13,8 +12,6 @@ import {IOFT} from "../interfaces/IOFT.sol";
 import {Errors} from "../libraries/Errors.sol";
 
 contract LayerZeroV2BridgeEncoder is AccessManagedUpgradeable, ILayerZeroV2BridgeEncoder {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     // Packed prefix: TYPE_3 | WORKER_ID | OPTION LENGTH | OPTION_TYPE_LZRECEIVE
     // = 0x0003 | 0x01 | 0x0011 | 0x01
     bytes6 internal constant EXECUTOR_LZRECEIVE_PREFIX = 0x000301001101;
@@ -101,7 +98,7 @@ contract LayerZeroV2BridgeEncoder is AccessManagedUpgradeable, ILayerZeroV2Bridg
             revert Errors.InvalidLzSentAmount();
         }
         if (oftr.amountReceivedLD < order.minOutputAmount) {
-            revert Errors.MaxValueLossExceeded();
+            revert Errors.AmountOutTooLow();
         }
 
         bytes memory cd = abi.encodeCall(IOFT.send, (sendParam, mf, msg.sender)); // solhint-disable-line check-send-result
@@ -118,8 +115,12 @@ contract LayerZeroV2BridgeEncoder is AccessManagedUpgradeable, ILayerZeroV2Bridg
     function setLzEndpointId(uint256 evmChainId, uint32 lzEndpointId) external override restricted {
         LayerZeroV2BridgeEncoderStorage storage $ = _getLayerZeroV2BridgeEncoderStorage();
 
-        if (evmChainId == 0 || lzEndpointId == 0) {
+        if (evmChainId == 0) {
             revert Errors.ZeroChainId();
+        }
+
+        if (lzEndpointId == 0) {
+            revert Errors.ZeroLzEndpointId();
         }
 
         uint32 oldLz = $._evmToLzId[evmChainId];
