@@ -20,7 +20,7 @@ contract MockERC20 is ERC20 {
 
     uint8 private _decimals;
 
-    bool returnsFalseOnTransfer;
+    bool private returnsFalseOnTransfer;
 
     constructor(string memory name_, string memory symbol_, uint256 decimals_) ERC20(name_, symbol_) {
         _decimals = uint8(decimals_);

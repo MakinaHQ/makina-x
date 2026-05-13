@@ -35,7 +35,7 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
 
     MakinaLiteRegistry internal registry;
     ModuleFactory internal moduleFactory;
-    address makinaLiteModuleImplem;
+    address internal makinaLiteModuleImplem;
     FlashLoanModule internal flashLoanModule;
 
     function setUp() public virtual {

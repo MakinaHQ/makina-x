@@ -93,13 +93,13 @@ contract DeployMakinaLite is Base, Script, CreateXUtils {
             address encoder;
             if (bridgeId == ACROSS_V4_BRIDGE_ID) {
                 address acrossV4SpokePool = vm.parseJsonAddress(inputJson, string.concat(base, ".acrossV4SpokePool"));
-                encoder = address(_deployAcrossV4BridgeEncoder(deployer, accessManager, acrossV4SpokePool));
+                encoder = address(_deployAcrossV4BridgeEncoder(accessManager, accessManager, acrossV4SpokePool));
             } else if (bridgeId == LAYER_ZERO_V2_BRIDGE_ID) {
-                encoder = address(_deployLayerZeroV2BridgeEncoder(deployer, accessManager));
+                encoder = address(_deployLayerZeroV2BridgeEncoder(accessManager, accessManager));
             } else if (bridgeId == CCTP_V2_BRIDGE_ID) {
                 address cctpV2TokenMessenger =
                     vm.parseJsonAddress(inputJson, string.concat(base, ".cctpV2TokenMessenger"));
-                encoder = address(_deployCctpV2BridgeEncoder(deployer, accessManager, cctpV2TokenMessenger));
+                encoder = address(_deployCctpV2BridgeEncoder(accessManager, accessManager, cctpV2TokenMessenger));
             } else {
                 revert("DeployMakinaLite: unsupported bridgeId");
             }
