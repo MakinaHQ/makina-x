@@ -37,7 +37,6 @@ abstract contract BridgeComponent is IBridgeComponent {
     function _sendOutBridgeTransfer(IBridgeComponent.BridgeOrder calldata order, address encoder, bool lockdownMode)
         internal
     {
-        uint256 maxLossBps = _maxBridgeLossBps[order.bridgeId];
         if (lockdownMode) {
             _checkAndSetCooldown(order.bridgeId);
 
@@ -45,7 +44,10 @@ abstract contract BridgeComponent is IBridgeComponent {
                 revert Errors.RecipientNotWhitelisted();
             }
 
-            if (order.minOutputAmount < order.inputAmount.mulDiv(MAX_BPS - maxLossBps, MAX_BPS, Math.Rounding.Ceil)) {
+            if (
+                order.minOutputAmount
+                    < order.inputAmount.mulDiv(MAX_BPS - _maxBridgeLossBps[order.bridgeId], MAX_BPS, Math.Rounding.Ceil)
+            ) {
                 revert Errors.MaxValueLossExceeded();
             }
         }
