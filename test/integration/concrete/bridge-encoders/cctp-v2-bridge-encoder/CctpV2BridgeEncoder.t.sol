@@ -3,15 +3,15 @@ pragma solidity 0.8.35;
 
 import {CctpV2BridgeEncoder} from "src/bridge-encoders/CctpV2BridgeEncoder.sol";
 
-import {BridgeEncoder_Integration_Concrete_Test} from "../BridgeEncoder.t.sol";
+import {Integration_Concrete_Test} from "../../IntegrationConcrete.t.sol";
 
-abstract contract CctpV2BridgeEncoder_Integration_Concrete_Test is BridgeEncoder_Integration_Concrete_Test {
+abstract contract CctpV2BridgeEncoder_Integration_Concrete_Test is Integration_Concrete_Test {
     CctpV2BridgeEncoder internal cctpV2BridgeEncoder;
 
     address internal cctpV2TokenMessenger;
 
     function setUp() public virtual override {
-        BridgeEncoder_Integration_Concrete_Test.setUp();
+        Integration_Concrete_Test.setUp();
 
         cctpV2TokenMessenger = makeAddr("cctpV2TokenMessenger");
 

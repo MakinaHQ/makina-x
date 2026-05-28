@@ -10,6 +10,7 @@ import {IAcrossV4BridgeEncoder} from "../interfaces/IAcrossV4BridgeEncoder.sol";
 import {IAcrossV4SpokePool} from "../interfaces/IAcrossV4SpokePool.sol";
 import {IBridgeComponent} from "../interfaces/IBridgeComponent.sol";
 import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
+import {IMakinaLiteGovernable} from "../interfaces/IMakinaLiteGovernable.sol";
 import {Errors} from "../libraries/Errors.sol";
 
 contract AcrossV4BridgeEncoder layout at erc7201("makina.storage.AcrossV4BridgeEncoder")
@@ -44,22 +45,22 @@ contract AcrossV4BridgeEncoder layout at erc7201("makina.storage.AcrossV4BridgeE
     }
 
     /// @inheritdoc IBridgeEncoder
-    function getBridgeTransferData(IBridgeComponent.BridgeOrder calldata order, bool lockdownMode)
+    function getBridgeTransferData(IBridgeComponent.BridgeOrder calldata order)
         external
         view
         override
         returns (address, address, uint256, bytes memory)
     {
-        (address outputToken, address refundAddress, uint32 fillDeadlineOffset) =
-            abi.decode(order.extraData, (address, address, uint32));
+        (address outputToken, uint32 fillDeadlineOffset) = abi.decode(order.extraData, (address, uint32));
 
-        if (lockdownMode && !isRouteRegistered(order.inputToken, order.destinationChainId, outputToken)) {
-            revert Errors.RouteNotRegistered();
+        address caller = msg.sender;
+        if (IMakinaLiteGovernable(caller).lockdownMode()) {
+            if (!isRouteRegistered(order.inputToken, order.destinationChainId, outputToken)) {
+                revert Errors.RouteNotRegistered();
+            }
         }
 
-        if (refundAddress == address(0)) {
-            revert Errors.ZeroRefundAddress();
-        }
+        address refundAddress = IMakinaLiteGovernable(caller).safe();
 
         bytes memory cd = abi.encodeCall(
             IAcrossV4SpokePool.depositV3Now,

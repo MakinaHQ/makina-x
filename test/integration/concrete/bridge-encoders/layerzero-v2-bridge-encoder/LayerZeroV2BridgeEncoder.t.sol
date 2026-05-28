@@ -5,18 +5,18 @@ import {LayerZeroV2BridgeEncoder} from "src/bridge-encoders/LayerZeroV2BridgeEnc
 import {MockOFT} from "test/mocks/MockOFT.sol";
 import {MockOFTAdapter} from "test/mocks/MockOFTAdapter.sol";
 
-import {BridgeEncoder_Integration_Concrete_Test} from "../BridgeEncoder.t.sol";
+import {Integration_Concrete_Test} from "../../IntegrationConcrete.t.sol";
 
-abstract contract LayerZeroV2BridgeEncoder_Integration_Concrete_Test is BridgeEncoder_Integration_Concrete_Test {
+abstract contract LayerZeroV2BridgeEncoder_Integration_Concrete_Test is Integration_Concrete_Test {
     MockOFTAdapter internal oftAdapter;
     MockOFT internal oft;
 
     LayerZeroV2BridgeEncoder internal layerZeroV2BridgeEncoder;
 
     function setUp() public virtual override {
-        BridgeEncoder_Integration_Concrete_Test.setUp();
+        Integration_Concrete_Test.setUp();
 
-        oftAdapter = new MockOFTAdapter(address(baseToken));
+        oftAdapter = new MockOFTAdapter(address(address(tokenB)));
         oft = new MockOFT("Mock OFT", "MOFT");
 
         layerZeroV2BridgeEncoder = _deployLayerZeroV2BridgeEncoder(address(accessManager), address(accessManager));

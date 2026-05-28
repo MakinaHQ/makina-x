@@ -52,7 +52,7 @@ contract CctpV2BridgeEncoder layout at erc7201("makina.storage.CctpV2BridgeEncod
     }
 
     /// @inheritdoc IBridgeEncoder
-    function getBridgeTransferData(IBridgeComponent.BridgeOrder calldata order, bool)
+    function getBridgeTransferData(IBridgeComponent.BridgeOrder calldata order)
         external
         view
         override
@@ -64,15 +64,14 @@ contract CctpV2BridgeEncoder layout at erc7201("makina.storage.CctpV2BridgeEncod
             revert Errors.MinOutputAmountExceedsInputAmount();
         }
 
-        (uint32 minFinalityThreshold) = abi.decode(order.extraData, (uint32));
+        uint32 minFinalityThreshold = abi.decode(order.extraData, (uint32));
 
-        bytes32 recipient = bytes32(uint256(uint160(order.recipient)));
         bytes memory cd = abi.encodeCall(
             ICctpV2TokenMessenger.depositForBurnWithHook,
             (
                 order.inputAmount,
                 destCctpDomain,
-                recipient,
+                bytes32(uint256(uint160(order.recipient))),
                 order.inputToken,
                 bytes32(0),
                 order.inputAmount - order.minOutputAmount,

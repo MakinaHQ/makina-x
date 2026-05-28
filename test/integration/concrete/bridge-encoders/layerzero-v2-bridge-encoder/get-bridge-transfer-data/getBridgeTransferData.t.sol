@@ -10,17 +10,23 @@ import {LayerZeroV2BridgeEncoder_Integration_Concrete_Test} from "../LayerZeroV2
 contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Test is
     LayerZeroV2BridgeEncoder_Integration_Concrete_Test
 {
+    function setUp() public override {
+        LayerZeroV2BridgeEncoder_Integration_Concrete_Test.setUp();
+
+        vm.startPrank(address(makinaLiteModule));
+    }
+
     function test_RevertGiven_OftMismatch() public {
         IBridgeComponent.BridgeOrder memory order;
         order.extraData = abi.encode(address(0), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftMismatch.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
 
         order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftMismatch.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_RevertGiven_LzEndpointIdNotRegistered() public {
@@ -29,7 +35,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_RevertGiven_ExceededMaxFee() public {
@@ -41,7 +47,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         order.extraData = abi.encode(address(oft), uint128(0), expectedFee - 1);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.ExceededMaxFee.selector, expectedFee, expectedFee - 1));
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_RevertGiven_InvalidLzSentAmount() public {
@@ -56,7 +62,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         oft.setFaultyModeSend(true);
 
         vm.expectRevert(Errors.InvalidLzSentAmount.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_RevertGiven_AmountOutTooLow() public {
@@ -72,13 +78,14 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         oft.setFaultyModeReceive(true);
 
         vm.expectRevert(Errors.AmountOutTooLow.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
-    function test_GetBridgeTransferData_NativeOFT_WithoutGasOption() public view {
+    function test_GetBridgeTransferData_NativeOFT_WithoutGasOption() public {
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = 999e15;
         uint256 expectedFee = DEFAULT_LAYER_ZERO_V2_LZ_VERIFY_GAS * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
+        address transferRecipient = makeAddr("transferRecipient");
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: DUMMY_BRIDGE_ID,
@@ -103,19 +110,19 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         IOFT.MessagingFee memory mf = IOFT.MessagingFee({nativeFee: expectedFee, lzTokenFee: 0});
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+            layerZeroV2BridgeEncoder.getBridgeTransferData(order);
         assertEq(approvalTarget, address(0));
         assertEq(executionTarget, address(oft));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(this))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
     }
 
-    function test_GetBridgeTransferData_NativeOFT_WithGasOption() public view {
+    function test_GetBridgeTransferData_NativeOFT_WithGasOption() public {
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = 999e15;
-
         uint256 expectedFee = (DEFAULT_LAYER_ZERO_V2_LZ_VERIFY_GAS + DEFAULT_LAYER_ZERO_V2_LZ_RECEIVE_GAS)
             * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
+        address transferRecipient = makeAddr("transferRecipient");
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: DUMMY_BRIDGE_ID,
@@ -140,23 +147,24 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         IOFT.MessagingFee memory mf = IOFT.MessagingFee({nativeFee: expectedFee, lzTokenFee: 0});
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+            layerZeroV2BridgeEncoder.getBridgeTransferData(order);
         assertEq(approvalTarget, address(0));
         assertEq(executionTarget, address(oft));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(this))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
     }
 
-    function test_GetBridgeTransferData_OFTAdapter_WithoutGasOption() public view {
+    function test_GetBridgeTransferData_OFTAdapter_WithoutGasOption() public {
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = 999e15;
         uint256 expectedFee = DEFAULT_LAYER_ZERO_V2_LZ_VERIFY_GAS * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
+        address transferRecipient = makeAddr("transferRecipient");
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: DUMMY_BRIDGE_ID,
             destinationChainId: L2_CHAIN_ID,
             recipient: transferRecipient,
-            inputToken: baseToken,
+            inputToken: address(tokenB),
             inputAmount: inputAmount,
             minOutputAmount: minOutputAmount,
             extraData: abi.encode(address(oftAdapter), uint128(0), expectedFee)
@@ -175,25 +183,25 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         IOFT.MessagingFee memory mf = IOFT.MessagingFee({nativeFee: expectedFee, lzTokenFee: 0});
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+            layerZeroV2BridgeEncoder.getBridgeTransferData(order);
         assertEq(approvalTarget, address(oftAdapter));
         assertEq(executionTarget, address(oftAdapter));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(this))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
     }
 
-    function test_GetBridgeTransferData_OFTAdapter_WithGasOption() public view {
+    function test_GetBridgeTransferData_OFTAdapter_WithGasOption() public {
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = 999e15;
-
         uint256 expectedFee = (DEFAULT_LAYER_ZERO_V2_LZ_VERIFY_GAS + DEFAULT_LAYER_ZERO_V2_LZ_RECEIVE_GAS)
             * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
+        address transferRecipient = makeAddr("transferRecipient");
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: DUMMY_BRIDGE_ID,
             destinationChainId: L2_CHAIN_ID,
             recipient: transferRecipient,
-            inputToken: baseToken,
+            inputToken: address(tokenB),
             inputAmount: inputAmount,
             minOutputAmount: minOutputAmount,
             extraData: abi.encode(address(oftAdapter), DEFAULT_LAYER_ZERO_V2_LZ_RECEIVE_GAS, expectedFee)
@@ -212,23 +220,29 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         IOFT.MessagingFee memory mf = IOFT.MessagingFee({nativeFee: expectedFee, lzTokenFee: 0});
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            layerZeroV2BridgeEncoder.getBridgeTransferData(order, false);
+            layerZeroV2BridgeEncoder.getBridgeTransferData(order);
         assertEq(approvalTarget, address(oftAdapter));
         assertEq(executionTarget, address(oftAdapter));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(this))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
     }
 
     function test_RevertGiven_OftNotRegistered_WhileInLockdownMode() public {
+        vm.stopPrank();
+        vm.prank(address(safe));
+        makinaLiteModule.setLockdownMode(true);
+
+        vm.startPrank(address(makinaLiteModule));
+
         IBridgeComponent.BridgeOrder memory order;
         order.extraData = abi.encode(address(0), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftNotRegistered.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, true);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
 
         order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftNotRegistered.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order, true);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 }

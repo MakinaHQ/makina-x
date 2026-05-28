@@ -192,7 +192,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
             inputToken: address(tokenA),
             inputAmount: inputAmount,
             minOutputAmount: minOutputAmount,
-            extraData: abi.encode(outputToken, address(safe), ACROSS_V4_FILL_DEADLINE_OFFSET)
+            extraData: abi.encode(outputToken, ACROSS_V4_FILL_DEADLINE_OFFSET)
         });
 
         uint256 transferId = acrossV4SpokePool.numberOfDeposits();

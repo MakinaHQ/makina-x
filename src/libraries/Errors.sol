@@ -59,6 +59,5 @@ library Errors {
     error ZeroChainId();
     error ZeroLzEndpointId();
     error ZeroPositionId();
-    error ZeroRefundAddress();
     error ZeroSalt();
 }

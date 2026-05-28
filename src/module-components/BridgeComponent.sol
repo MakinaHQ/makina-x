@@ -51,7 +51,7 @@ abstract contract BridgeComponent is IBridgeComponent {
         }
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            IBridgeEncoder(encoder).getBridgeTransferData(order, lockdownMode);
+            IBridgeEncoder(encoder).getBridgeTransferData(order);
 
         if (approvalTarget != address(0)) {
             IERC20(order.inputToken).forceApprove(approvalTarget, order.inputAmount);

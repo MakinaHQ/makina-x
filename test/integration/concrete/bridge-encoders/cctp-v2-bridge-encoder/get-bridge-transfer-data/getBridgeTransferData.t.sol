@@ -14,7 +14,7 @@ contract GetBridgeTransferData_CctpV2BridgeEncoder_Integration_Concrete_Test is
         IBridgeComponent.BridgeOrder memory order;
 
         vm.expectRevert(Errors.CctpDomainNotRegistered.selector);
-        cctpV2BridgeEncoder.getBridgeTransferData(order, false);
+        cctpV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_RevertWhen_MinOutputAmountExceedsInputAmount() public {
@@ -24,32 +24,16 @@ contract GetBridgeTransferData_CctpV2BridgeEncoder_Integration_Concrete_Test is
         order.minOutputAmount = 1e18 + 1;
 
         vm.expectRevert(Errors.MinOutputAmountExceedsInputAmount.selector);
-        cctpV2BridgeEncoder.getBridgeTransferData(order, false);
+        cctpV2BridgeEncoder.getBridgeTransferData(order);
     }
 
     function test_GetBridgeTransferData_EmptyParams() public view {
-        _test_GetBridgeTransferData_EmptyParams(false);
-    }
-
-    function test_GetBridgeTransferData() public view {
-        _test_GetBridgeTransferData(false);
-    }
-
-    function test_GetBridgeTransferData_EmptyParams_WhileInLockdownMode() public view {
-        _test_GetBridgeTransferData_EmptyParams(true);
-    }
-
-    function test_GetBridgeTransferData_WhileInLockdownMode() public view {
-        _test_GetBridgeTransferData(true);
-    }
-
-    function _test_GetBridgeTransferData_EmptyParams(bool lockdownMode) internal view {
         IBridgeComponent.BridgeOrder memory order;
         order.destinationChainId = L2_CHAIN_ID;
         order.extraData = abi.encode(0);
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            cctpV2BridgeEncoder.getBridgeTransferData(order, lockdownMode);
+            cctpV2BridgeEncoder.getBridgeTransferData(order);
 
         assertEq(approvalTarget, cctpV2TokenMessenger);
         assertEq(executionTarget, cctpV2TokenMessenger);
@@ -72,22 +56,24 @@ contract GetBridgeTransferData_CctpV2BridgeEncoder_Integration_Concrete_Test is
         );
     }
 
-    function _test_GetBridgeTransferData(bool lockdownMode) internal view {
+    function test_GetBridgeTransferData() public {
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = 999e15;
+
+        address transferRecipient = makeAddr("transferRecipient");
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: DUMMY_BRIDGE_ID,
             destinationChainId: L2_CHAIN_ID,
             recipient: transferRecipient,
-            inputToken: baseToken,
+            inputToken: address(tokenB),
             inputAmount: inputAmount,
             minOutputAmount: minOutputAmount,
             extraData: abi.encode(CCTP_V2_CONFIRMED_FINALITY_THRESHOLD)
         });
 
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
-            cctpV2BridgeEncoder.getBridgeTransferData(order, lockdownMode);
+            cctpV2BridgeEncoder.getBridgeTransferData(order);
 
         assertEq(approvalTarget, cctpV2TokenMessenger);
         assertEq(executionTarget, cctpV2TokenMessenger);
@@ -100,7 +86,7 @@ contract GetBridgeTransferData_CctpV2BridgeEncoder_Integration_Concrete_Test is
                     inputAmount,
                     CCTP_V2_SPOKE_DOMAIN,
                     bytes32(uint256(uint160(transferRecipient))),
-                    baseToken,
+                    address(tokenB),
                     bytes32(0),
                     inputAmount - minOutputAmount,
                     CCTP_V2_CONFIRMED_FINALITY_THRESHOLD,
