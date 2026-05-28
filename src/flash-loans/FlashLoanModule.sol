@@ -60,7 +60,7 @@ contract FlashLoanModule is IFlashLoanModule {
 
         _handleFlashLoanCallback(makinaLiteModule, instruction, token, assets);
 
-        IERC20(token).safeIncreaseAllowance(morpho, assets);
+        IERC20(token).forceApprove(morpho, assets);
     }
 
     /// @dev Dispatches the flash loan request to the appropriate provider.
@@ -100,7 +100,7 @@ contract FlashLoanModule is IFlashLoanModule {
         address token,
         uint256 amount
     ) internal {
-        IERC20(token).safeIncreaseAllowance(makinaLiteModule, amount);
+        IERC20(token).forceApprove(makinaLiteModule, amount);
         IMakinaLiteModule(makinaLiteModule).manageFlashLoan(instruction, token, amount);
     }
 }
