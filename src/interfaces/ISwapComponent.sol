@@ -35,10 +35,10 @@ interface ISwapComponent {
         uint256 minOutputAmount;
     }
 
-    /// @notice Max allowed value loss (in basis points) for token swaps, while in FENCED or WALLED mode.
+    /// @notice Max allowed value loss (in basis points) for token swaps while in FENCED or WALLED mode.
     function maxSwapLossBps() external view returns (uint256);
 
-    /// @notice Cooldown duration for token swaps in seconds.
+    /// @notice Cooldown duration (in seconds) for token swaps while in FENCED or WALLED mode.
     function swapCooldownDuration() external view returns (uint256);
 
     /// @notice Swap fee rate, 1e18 = 100%.
@@ -54,9 +54,13 @@ interface ISwapComponent {
     /// @param order The swap order object.
     function swap(SwapOrder calldata order) external;
 
-    /// @notice Sets the maximum allowed value loss (in basis points) for token swaps while in FENCED or WALLED mode.
-    /// @param newMaxSwapLossBps The new maximum swap loss in basis points.
+    /// @notice Sets the maximum allowed relative value loss for token swaps while in FENCED or WALLED mode.
+    /// @param newMaxSwapLossBps The new maximum value loss in basis points.
     function setMaxSwapLossBps(uint256 newMaxSwapLossBps) external;
+
+    /// @notice Sets the cooldown duration for token swaps while in FENCED or WALLED mode.
+    /// @param newSwapCooldownDuration The new cooldown duration in seconds.
+    function setSwapCooldownDuration(uint256 newSwapCooldownDuration) external;
 
     /// @notice Sets the swap fee rate.
     /// @param newSwapFeeRate The new swap fee rate, 1e18 = 100%.
@@ -67,8 +71,4 @@ interface ISwapComponent {
     /// @param approvalTarget The approval target.
     /// @param executionTarget The execution target.
     function setSwapperTargets(uint16 swapperId, address approvalTarget, address executionTarget) external;
-
-    /// @notice Sets the cooldown duration for token swaps.
-    /// @param newSwapCooldownDuration The new cooldown duration in seconds.
-    function setSwapCooldownDuration(uint256 newSwapCooldownDuration) external;
 }

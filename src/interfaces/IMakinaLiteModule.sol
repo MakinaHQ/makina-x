@@ -21,11 +21,11 @@ interface IMakinaLiteModule is
     /// @param initialProvider The address of the MakinaLite service account.
     /// @param initialOperatingMode The initial operating mode of the module.
     /// @param initialAllowedInstrRoot The root of the Merkle tree containing the allowed instructions for the module.
-    /// @param initialMaxPositionIncreaseLossBps The max allowed value loss (in basis points) for position increases, while in WALLED mode.
-    /// @param initialMaxPositionDecreaseLossBps The max allowed value loss (in basis points) for position decreases, while in WALLED mode.
-    /// @param initialInstrCooldownDuration The cooldown duration for position management in seconds.
-    /// @param initialMaxSwapLossBps The maximum allowed loss in basis points for swap operations, while in FENCED or WALLED mode.
-    /// @param initialSwapCooldownDuration The cooldown duration for swap operations in seconds.
+    /// @param initialMaxPositionIncreaseLossBps The max allowed value loss (in basis points) for position increases while in WALLED mode.
+    /// @param initialMaxPositionDecreaseLossBps The max allowed value loss (in basis points) for position decreases while in WALLED mode.
+    /// @param initialInstrCooldownDuration The cooldown duration (in seconds) for position management while in WALLED mode.
+    /// @param initialMaxSwapLossBps The maximum allowed loss in basis points for swap operations while in FENCED or WALLED mode.
+    /// @param initialSwapCooldownDuration The cooldown duration (in seconds) for swap operations while in FENCED or WALLED mode.
     /// @param initialSwapFeeRate The fee rate for swap operations, 1e18 = 100%.
     struct MakinaLiteModuleInitParams {
         address safe;

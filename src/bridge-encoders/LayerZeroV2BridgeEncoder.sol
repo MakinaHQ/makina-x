@@ -51,6 +51,8 @@ contract LayerZeroV2BridgeEncoder layout at erc7201("makina.storage.LayerZeroV2B
         override
         returns (address, address, uint256, bytes memory)
     {
+        uint32 destLzEndpointId = getLzEndpointId(order.destinationChainId);
+
         (address oft, uint128 lzReceiveGas, uint256 maxValue) = abi.decode(order.extraData, (address, uint128, uint256));
 
         address caller = msg.sender;
@@ -73,7 +75,7 @@ contract LayerZeroV2BridgeEncoder layout at erc7201("makina.storage.LayerZeroV2B
         }
 
         IOFT.SendParam memory sendParam = IOFT.SendParam({
-            dstEid: getLzEndpointId(order.destinationChainId),
+            dstEid: destLzEndpointId,
             to: bytes32(uint256(uint160(order.recipient))),
             amountLD: order.inputAmount,
             minAmountLD: order.minOutputAmount,
@@ -95,7 +97,8 @@ contract LayerZeroV2BridgeEncoder layout at erc7201("makina.storage.LayerZeroV2B
             revert Errors.AmountOutTooLow();
         }
 
-        bytes memory cd = abi.encodeCall(IOFT.send, (sendParam, mf, caller)); // solhint-disable-line check-send-result
+        // solhint-disable-next-line check-send-result
+        bytes memory cd = abi.encodeCall(IOFT.send, (sendParam, mf, caller));
 
         address approvalTarget;
         if (IOFT(oft).approvalRequired()) {

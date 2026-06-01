@@ -27,23 +27,27 @@ interface IBridgeComponent {
         bytes extraData;
     }
 
-    /// @notice Bridge ID => Max allowed value loss in basis points for transfers via this bridge, while in FENCED or WALLED mode.
+    /// @notice Bridge ID => Max allowed value loss in basis points for transfers via this bridge while in FENCED or WALLED mode.
     function getMaxBridgeLossBps(uint16 bridgeId) external view returns (uint256);
 
     /// @notice Foreign Chain ID => Recipient => Whitelisting status while in FENCED or WALLED mode.
     function isWhitelistedRecipient(uint256 foreignChainId, address recipient) external view returns (bool);
 
-    /// @notice Cooldown duration for bridge transfers in seconds.
+    /// @notice Cooldown duration (in seconds) for bridge transfers while in FENCED or WALLED mode.
     function bridgeCooldownDuration() external view returns (uint256);
 
     /// @notice Executes an outgoing bridge transfer.
     /// @param order The bridge transfer params.
     function sendOutBridgeTransfer(BridgeOrder calldata order) external;
 
-    /// @notice Sets the maximum allowed value loss in basis points for transfers via this bridge.
+    /// @notice Sets the maximum allowed relative value loss for transfers via this bridge while in FENCED or WALLED mode.
     /// @param bridgeId The ID of the bridge.
-    /// @param maxBridgeLossBps The maximum allowed value loss in basis points.
-    function setMaxBridgeLossBps(uint16 bridgeId, uint256 maxBridgeLossBps) external;
+    /// @param newMaxBridgeLossBps The new maximum value loss in basis points.
+    function setMaxBridgeLossBps(uint16 bridgeId, uint256 newMaxBridgeLossBps) external;
+
+    /// @notice Sets the cooldown duration for bridge transfers while in FENCED or WALLED mode.
+    /// @param newBridgeCooldownDuration The new cooldown duration in seconds.
+    function setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) external;
 
     /// @notice Adds a whitelisted recipient for bridge transfer towards given foreign chain while in FENCED or WALLED mode.
     /// @param foreignChainId The foreign chain ID.
@@ -54,8 +58,4 @@ interface IBridgeComponent {
     /// @param foreignChainId The foreign chain ID.
     /// @param recipient The address of the recipient.
     function removeRecipient(uint256 foreignChainId, address recipient) external;
-
-    /// @notice Sets the cooldown duration for bridge transfers.
-    /// @param newBridgeCooldownDuration The new cooldown duration in seconds.
-    function setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) external;
 }

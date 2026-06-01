@@ -16,7 +16,6 @@ library Errors {
     error InvalidDataHash();
     error InvalidDebtFlag();
     error InvalidDecimals();
-    error InvalidTarget();
     error InvalidFeedRoute();
     error InvalidFeeRate();
     error InvalidFlashLoanProvider();
@@ -26,6 +25,7 @@ library Errors {
     error InvalidInstructionType();
     error InvalidLzSentAmount();
     error InvalidPositionChangeDirection();
+    error InvalidTarget();
     error LzEndpointIdNotRegistered();
     error ManageFlashLoanReentrantCall();
     error MaxValueLossExceeded();

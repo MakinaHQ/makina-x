@@ -57,10 +57,10 @@ interface IWeirollComponent {
     /// @dev If set to address(0), the reference currency of the OracleRegistry is used.
     function accountingCurrency() external view returns (address);
 
-    /// @notice Max allowed value loss (in basis points) when increasing a position, while in WALLED mode.
+    /// @notice Max allowed value loss (in basis points) when increasing a position while in WALLED mode.
     function maxPositionIncreaseLossBps() external view returns (uint256);
 
-    /// @notice Max allowed value loss (in basis points) when decreasing a position, while in WALLED mode.
+    /// @notice Max allowed value loss (in basis points) when decreasing a position while in WALLED mode.
     function maxPositionDecreaseLossBps() external view returns (uint256);
 
     /// @notice Cooldown duration for instruction executions in seconds.
@@ -141,15 +141,15 @@ interface IWeirollComponent {
     /// @param newAccountingCurrency The new currency.
     function setAccountingCurrency(address newAccountingCurrency) external;
 
-    /// @notice Sets the max allowed value loss for position increases.
-    /// @param newMaxPositionIncreaseLossBps The new max value loss in basis points.
+    /// @notice Sets the maximum allowed relative value loss for position increases while in WALLED mode.
+    /// @param newMaxPositionIncreaseLossBps The new maximum value loss in basis points.
     function setMaxPositionIncreaseLossBps(uint256 newMaxPositionIncreaseLossBps) external;
 
-    /// @notice Sets the max allowed value loss for position decreases.
-    /// @param newMaxPositionDecreaseLossBps The new max value loss in basis points.
+    /// @notice Sets the maximum allowed relative value loss for position decreases while in WALLED mode.
+    /// @param newMaxPositionDecreaseLossBps The new maximum value loss in basis points.
     function setMaxPositionDecreaseLossBps(uint256 newMaxPositionDecreaseLossBps) external;
 
-    /// @notice Sets the cooldown duration for instruction executions.
+    /// @notice Sets the cooldown duration for instruction executions while in WALLED mode.
     /// @param newInstrCooldownDuration The new cooldown duration in seconds.
     function setInstrCooldownDuration(uint256 newInstrCooldownDuration) external;
 }

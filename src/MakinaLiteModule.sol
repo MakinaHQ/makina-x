@@ -251,9 +251,14 @@ contract MakinaLiteModule is
     }
 
     /// @inheritdoc IBridgeComponent
-    function setMaxBridgeLossBps(uint16 bridgeId, uint256 maxBridgeLossBps) external override onlySafe {
-        _checkBps(maxBridgeLossBps);
-        _setMaxBridgeLossBps(bridgeId, maxBridgeLossBps);
+    function setMaxBridgeLossBps(uint16 bridgeId, uint256 newMaxBridgeLossBps) external override onlySafe {
+        _checkBps(newMaxBridgeLossBps);
+        _setMaxBridgeLossBps(bridgeId, newMaxBridgeLossBps);
+    }
+
+    /// @inheritdoc IBridgeComponent
+    function setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) external override onlySafe {
+        _setBridgeCooldownDuration(newBridgeCooldownDuration);
     }
 
     /// @inheritdoc IBridgeComponent
@@ -264,11 +269,6 @@ contract MakinaLiteModule is
     /// @inheritdoc IBridgeComponent
     function removeRecipient(uint256 foreignChainId, address recipient) external override onlySafe {
         _removeRecipient(foreignChainId, recipient);
-    }
-
-    /// @inheritdoc IBridgeComponent
-    function setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) external override onlySafe {
-        _setBridgeCooldownDuration(newBridgeCooldownDuration);
     }
 
     /// @inheritdoc IMakinaLiteModule

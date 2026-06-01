@@ -77,7 +77,7 @@ abstract contract SwapComponent is ISwapComponent {
         return outputAmount;
     }
 
-    /// @dev Internal logic to set the maximum allowed value loss (in basis points) for token swaps, enforced when the operating mode is not OPEN.
+    /// @dev Internal logic to set the maximum allowed relative value loss for token swaps.
     function _setMaxSwapLossBps(uint256 newMaxSwapLossBps) internal {
         emit MaxSwapLossBpsChanged(maxSwapLossBps, newMaxSwapLossBps);
         maxSwapLossBps = newMaxSwapLossBps;
@@ -101,7 +101,7 @@ abstract contract SwapComponent is ISwapComponent {
         emit SwapperTargetsSet(swapperId, approvalTarget, executionTarget);
     }
 
-    /// @dev Checks cooldown for swaps and updates the last swap timestamp.
+    /// @dev Checks cooldown for swaps and updates the last guarded swap timestamp.
     function _checkAndSetCooldown() internal {
         uint256 timestamp = block.timestamp;
         if (_lastGuardedSwapTimestamp != 0 && timestamp - _lastGuardedSwapTimestamp < swapCooldownDuration) {

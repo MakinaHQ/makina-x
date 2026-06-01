@@ -130,7 +130,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
     }
 
     /// @inheritdoc IMakinaLiteGovernable
-    function suspend() external onlyProvider {
+    function suspend() external override onlyProvider {
         if (!suspendedByProvider) {
             emit Suspended();
             suspendedByProvider = true;
@@ -138,7 +138,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
     }
 
     /// @inheritdoc IMakinaLiteGovernable
-    function unsuspend() external onlyProvider {
+    function unsuspend() external override onlyProvider {
         if (suspendedByProvider) {
             emit Unsuspended();
             suspendedByProvider = false;
@@ -146,7 +146,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
     }
 
     /// @inheritdoc IMakinaLiteGovernable
-    function pause() external onlyGuardian {
+    function pause() external override onlyGuardian {
         if (!paused) {
             emit Paused(msg.sender);
             paused = true;
@@ -154,7 +154,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
     }
 
     /// @inheritdoc IMakinaLiteGovernable
-    function unpause() external onlyGuardian {
+    function unpause() external override onlyGuardian {
         if (paused) {
             emit Unpaused(msg.sender);
             paused = false;

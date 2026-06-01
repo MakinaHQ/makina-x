@@ -54,10 +54,11 @@ contract AcrossV4BridgeEncoder layout at erc7201("makina.storage.AcrossV4BridgeE
         (address outputToken, uint32 fillDeadlineOffset) = abi.decode(order.extraData, (address, uint32));
 
         address caller = msg.sender;
-        if (IMakinaLiteGovernable(caller).operatingMode() != IMakinaLiteGovernable.OperatingMode.OPEN) {
-            if (!isRouteRegistered(order.inputToken, order.destinationChainId, outputToken)) {
-                revert Errors.RouteNotRegistered();
-            }
+        if (
+            IMakinaLiteGovernable(caller).operatingMode() != IMakinaLiteGovernable.OperatingMode.OPEN
+                && !isRouteRegistered(order.inputToken, order.destinationChainId, outputToken)
+        ) {
+            revert Errors.RouteNotRegistered();
         }
 
         address refundAddress = IMakinaLiteGovernable(caller).safe();

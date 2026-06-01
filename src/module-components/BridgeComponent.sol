@@ -67,10 +67,16 @@ abstract contract BridgeComponent is IBridgeComponent {
         }
     }
 
-    /// @dev Internal logic to set the max allowed value loss in basis points for transfers via a given bridge.
+    /// @dev Internal logic to set the maximum allowed relative value loss for transfers via a given bridge.
     function _setMaxBridgeLossBps(uint16 bridgeId, uint256 newMaxBridgeLossBps) internal {
         emit MaxBridgeLossBpsChanged(bridgeId, _maxBridgeLossBps[bridgeId], newMaxBridgeLossBps);
         _maxBridgeLossBps[bridgeId] = newMaxBridgeLossBps;
+    }
+
+    /// @dev Internal logic to set the cooldown duration for bridge transfers.
+    function _setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) internal {
+        emit BridgeCooldownDurationChanged(bridgeCooldownDuration, newBridgeCooldownDuration);
+        bridgeCooldownDuration = newBridgeCooldownDuration;
     }
 
     /// @dev Internal logic to add a whitelisted recipient for bridge transfer towards given foreign chain.
@@ -91,13 +97,7 @@ abstract contract BridgeComponent is IBridgeComponent {
         emit BridgeTransferRecipientRemoved(foreignChainId, recipient);
     }
 
-    /// @dev Internal logic to set the cooldown duration for bridge transfers.
-    function _setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) internal {
-        emit BridgeCooldownDurationChanged(bridgeCooldownDuration, newBridgeCooldownDuration);
-        bridgeCooldownDuration = newBridgeCooldownDuration;
-    }
-
-    /// @dev Checks cooldown for a given bridge and updates its last outgoing transfer timestamp.
+    /// @dev Checks cooldown for a given bridge and updates its last guarded outgoing transfer timestamp.
     function _checkAndSetCooldown(uint16 bridgeId) internal {
         uint256 timestamp = block.timestamp;
         if (

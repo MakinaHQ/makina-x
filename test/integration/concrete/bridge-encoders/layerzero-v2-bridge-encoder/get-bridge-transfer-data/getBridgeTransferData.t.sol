@@ -17,8 +17,18 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         vm.startPrank(address(makinaLiteModule));
     }
 
+    function test_RevertGiven_LzEndpointIdNotRegistered() public {
+        IBridgeComponent.BridgeOrder memory order;
+        order.inputToken = address(oft);
+        order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
+
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
+        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
+    }
+
     function test_RevertGiven_OftMismatch() public {
         IBridgeComponent.BridgeOrder memory order;
+        order.destinationChainId = L2_CHAIN_ID;
         order.extraData = abi.encode(address(0), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftMismatch.selector);
@@ -27,15 +37,6 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftMismatch.selector);
-        layerZeroV2BridgeEncoder.getBridgeTransferData(order);
-    }
-
-    function test_RevertGiven_LzEndpointIdNotRegistered() public {
-        IBridgeComponent.BridgeOrder memory order;
-        order.inputToken = address(oft);
-        order.extraData = abi.encode(address(oft), uint128(0), uint128(0));
-
-        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getBridgeTransferData(order);
     }
 
@@ -244,6 +245,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         vm.startPrank(address(makinaLiteModule));
 
         IBridgeComponent.BridgeOrder memory order;
+        order.destinationChainId = L2_CHAIN_ID;
         order.extraData = abi.encode(address(0), uint128(0), uint128(0));
 
         vm.expectRevert(Errors.OftNotRegistered.selector);

@@ -331,13 +331,13 @@ abstract contract WeirollComponent is IWeirollComponent {
         accountingCurrency = newAccountingCurrency;
     }
 
-    /// @dev Internal logic to set the max allowed value loss for position increases.
+    /// @dev Internal logic to set the maximum allowed relative value loss for position increases.
     function _setMaxPositionIncreaseLossBps(uint256 newMaxPositionIncreaseLossBps) internal {
         emit MaxPositionIncreaseLossBpsChanged(maxPositionIncreaseLossBps, newMaxPositionIncreaseLossBps);
         maxPositionIncreaseLossBps = newMaxPositionIncreaseLossBps;
     }
 
-    /// @dev Internal logic to set the max allowed value loss for position decreases.
+    /// @dev Internal logic to set the maximum allowed relative value loss for position decreases.
     function _setMaxPositionDecreaseLossBps(uint256 newMaxPositionDecreaseLossBps) internal {
         emit MaxPositionDecreaseLossBpsChanged(maxPositionDecreaseLossBps, newMaxPositionDecreaseLossBps);
         maxPositionDecreaseLossBps = newMaxPositionDecreaseLossBps;
@@ -366,7 +366,7 @@ abstract contract WeirollComponent is IWeirollComponent {
         return abi.decode(returnData, (bytes[]));
     }
 
-    /// @dev Checks cooldown for a given execution and updates its last timestamp.
+    /// @dev Checks cooldown for a given guarded execution and updates its last timestamp.
     function _checkAndSetCooldown(bytes32 executionHash) internal {
         uint256 timestamp = block.timestamp;
         if (
