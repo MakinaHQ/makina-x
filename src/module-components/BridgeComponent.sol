@@ -79,7 +79,7 @@ abstract contract BridgeComponent is IBridgeComponent {
         bridgeCooldownDuration = newBridgeCooldownDuration;
     }
 
-    /// @dev Internal logic to add a whitelisted recipient for bridge transfer towards given foreign chain.
+    /// @dev Internal logic to add a whitelisted recipient for bridge transfer to a given foreign chain.
     function _addRecipient(uint256 foreignChainId, address recipient) internal {
         if (_isWhitelistedRecipient[foreignChainId][recipient]) {
             revert Errors.RecipientAlreadyWhitelisted();
@@ -88,7 +88,7 @@ abstract contract BridgeComponent is IBridgeComponent {
         emit BridgeTransferRecipientAdded(foreignChainId, recipient);
     }
 
-    /// @dev Internal logic to remove a whitelisted recipient for bridge transfer towards given foreign chain.
+    /// @dev Internal logic to remove a whitelisted recipient for bridge transfer to a given foreign chain.
     function _removeRecipient(uint256 foreignChainId, address recipient) internal {
         if (!_isWhitelistedRecipient[foreignChainId][recipient]) {
             revert Errors.RecipientNotWhitelisted();

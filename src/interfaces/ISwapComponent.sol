@@ -19,7 +19,7 @@ interface ISwapComponent {
         address executionTarget;
     }
 
-    /// @notice Swap order object.
+    /// @notice Generic swap params.
     /// @param swapperId The ID of the external swap protocol.
     /// @param data The swap calldata to pass to the swapper's execution target.
     /// @param inputToken The input token.
@@ -50,8 +50,8 @@ interface ISwapComponent {
     /// @return executionTarget The execution target.
     function getSwapperTargets(uint16 swapperId) external view returns (address approvalTarget, address executionTarget);
 
-    /// @notice Swaps tokens on behalf of Safe using a given swapper.
-    /// @param order The swap order object.
+    /// @notice Swaps tokens on behalf of the Safe using a given swapper.
+    /// @param order The swap params.
     function swap(SwapOrder calldata order) external;
 
     /// @notice Sets the maximum allowed relative value loss for token swaps while in FENCED or WALLED mode.

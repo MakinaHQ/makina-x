@@ -11,7 +11,6 @@ MakinaLite uses two distinct access control systems:
 
 The Safe is the ultimate owner of the module and all managed assets. It has exclusive authority over configuration and risk parameters.
 
-- Can set the provider address.
 - Can add and remove operators.
 - Can add and remove guardians.
 - Can set the operating mode.

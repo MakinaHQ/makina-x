@@ -28,7 +28,7 @@ The Safe can set the module's operating mode, which determines the on-chain safe
 - **FENCED**: Restrictions are enforced on value-exit paths — swaps and bridge transfers — namely value loss limits, cooldowns, bridge recipient whitelisting, and route/OFT registration checks. Position management remains unrestricted.
 - **WALLED**: All `FENCED` restrictions, plus position management restrictions — mandatory accounting, value preservation checks, and instruction cooldowns.
 
-Instruction Merkle proof verification is always enforced, regardless of operating mode. The default mode after initialization is `OPEN`.
+Instruction Merkle proof verification is always enforced, regardless of operating mode.
 
 ### Position Management
 
@@ -49,10 +49,12 @@ Each `Instruction` object includes an `affectedTokens` list. For `MANAGEMENT` in
 
 #### Position Value Loss Checks
 
-When in `WALLED` mode, position management operations enforce value loss limits. After each management instruction, the module compares the position value change against the change in affected token balances held by the Safe:
+When in `WALLED` mode, position management operations enforce value loss limits. After each management instruction, the module compares the position value change against the change in affected token balances held by the Safe. For example in the case of asset positions:
 
 - For position increases: the position value gained must be within `maxPositionIncreaseLossBps` of the tokens spent.
 - For position decreases: the tokens received must be within `maxPositionDecreaseLossBps` of the position value lost.
+
+For debt positions the token flow is inverted (increasing the debt brings tokens in, decreasing it sends tokens out), so the same limits apply against the opposite flow direction. See the validation matrix in `IWeirollComponent.managePosition` for the exact rules.
 
 **Limitation:** these value loss checks cannot be robustly enforced for instructions that embed arbitrary operator-supplied calldata, such as routing through a DEX aggregator. Such calldata can hand control to third parties mid-execution through reentrant intermediary tokens or protocol callbacks, which can inflate the Safe's measured balances (e.g. by settling a pending inbound bridge transfer, claiming a bridge refund, claiming permissionless rewards), thereby masking a real loss. Whitelisting such instructions is therefore discouraged.
 
@@ -78,7 +80,7 @@ The protocol relies on specific assumptions on the instructions. Some are always
   - They must not result in token balance changes for tokens that are not in the `affectedTokens` list of the associated `MANAGEMENT` instruction.
   - They should not leave persistent ERC20 approvals from the Safe to external contracts.
 
-### SwapModule
+### Token Swapping
 
 The `SwapComponent` enables the module to execute token swaps through external DEX protocols using unverified calldata. For each registered swapper, an approval target and an execution target are configured. The module pulls funds from the Safe, approves the approval target, executes the swap calldata on the execution target, revokes the approval, and returns the output tokens to the Safe.
 
@@ -90,7 +92,7 @@ A configurable swap fee rate, set by the provider, is applied to every swap outp
 
 #### Cooldown
 
-When in `FENCED` or `WALLED` mode, swaps are subject to a cooldown. The module records the timestamp of the last successful swap and rejects subsequent swaps until the configured swap cooldown duration has elapsed. The cooldown is global to the swap component and is not segmented by swapper, input token, or output token. It also applies to swaps performed as part of a `harvest` call: since all orders in a single call execute in the same block, a `harvest` carrying more than one swap order can only be executed in `OPEN` mode.
+When in `FENCED` or `WALLED` mode, swaps are subject to a cooldown. The module records the timestamp of the last successful swap and rejects subsequent swaps until the configured swap cooldown duration has elapsed. The cooldown is global to the swap component and is not segmented by swapper, input token, or output token. It also applies to swaps performed as part of a `harvest` call. A harvest carrying more than one swap order therefore requires `OPEN` mode, or a swap cooldown of zero.
 
 ### Oracle Registry
 
@@ -105,7 +107,7 @@ The oracle is used for:
 
 By default, position values are expressed in the reference currency (address(0)). An optional accounting currency can be set per module, in which case position values are expressed in that token using the oracle's cross-token pricing.
 
-### Liquidity Bridging
+### Token Bridging
 
 The `BridgeComponent` enables cross-chain token transfers through a modular bridge encoder system. The module supports multiple bridge protocols via a set of `BridgeEncoder` contracts that each encode the appropriate calldata for a given external bridge.
 
@@ -139,9 +141,10 @@ The flow operates as follows:
 1. The Safe calls `requestFlashLoan` on the `FlashLoanModule`, specifying the taker module, token, amount, and the `FLASHLOAN_MANAGEMENT` instruction.
 2. The `FlashLoanModule` requests the flash loan from Morpho.
 3. Morpho calls back `onMorphoFlashLoan` on the `FlashLoanModule`.
-4. The `FlashLoanModule` transfers the flash-loaned funds to the Safe and delegates execution to the taker module's `manageFlashLoan` function.
-5. The taker module executes the `FLASHLOAN_MANAGEMENT` instruction via the Safe.
-6. The taker module instructs the Safe to transfer the repayment amount to the `FlashLoanModule`, which repays Morpho.
+4. The `FlashLoanModule` delegates execution to the taker module's `manageFlashLoan` function.
+5. The taker module transfers the flash-loaned funds from the `FlashLoanModule` to the Safe.
+6. The taker module executes the `FLASHLOAN_MANAGEMENT` instruction via the Safe.
+7. The taker module instructs the Safe to transfer the repayment amount to the `FlashLoanModule`, which repays Morpho.
 
 The `FlashLoanModule` validates that the taker is a module deployed by the `ModuleFactory` and that the caller is the taker's Safe. Reentrancy is prevented via transient storage flags.
 

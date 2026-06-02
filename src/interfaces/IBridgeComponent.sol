@@ -9,14 +9,14 @@ interface IBridgeComponent {
         uint16 indexed bridgeId, uint256 indexed oldMaxBridgeLossBps, uint256 indexed newMaxBridgeLossBps
     );
 
-    /// @notice Generic bridge transfer params
+    /// @notice Generic bridge transfer params.
     /// @param bridgeId The ID of the bridge.
-    /// @param destinationChainId The destination EVM chain ID
-    /// @param recipient The address of the recipient
+    /// @param destinationChainId The destination EVM chain ID.
+    /// @param recipient The address of the recipient.
     /// @param inputToken The address of the input token.
     /// @param inputAmount The amount of input token to bridge.
     /// @param minOutputAmount The minimum amount of output token expected.
-    /// @param extraData Extra data specific to each bridge integration
+    /// @param extraData Extra data specific to each bridge integration.
     struct BridgeOrder {
         uint16 bridgeId;
         uint256 destinationChainId;
@@ -49,12 +49,12 @@ interface IBridgeComponent {
     /// @param newBridgeCooldownDuration The new cooldown duration in seconds.
     function setBridgeCooldownDuration(uint256 newBridgeCooldownDuration) external;
 
-    /// @notice Adds a whitelisted recipient for bridge transfer towards given foreign chain while in FENCED or WALLED mode.
+    /// @notice Adds a whitelisted recipient for bridge transfer to a given foreign chain while in FENCED or WALLED mode.
     /// @param foreignChainId The foreign chain ID.
     /// @param recipient The address of the recipient.
     function addRecipient(uint256 foreignChainId, address recipient) external;
 
-    /// @notice Removes a whitelisted recipient for bridge transfer towards given foreign chain while in FENCED or WALLED mode.
+    /// @notice Removes a whitelisted recipient for bridge transfer to a given foreign chain while in FENCED or WALLED mode.
     /// @param foreignChainId The foreign chain ID.
     /// @param recipient The address of the recipient.
     function removeRecipient(uint256 foreignChainId, address recipient) external;

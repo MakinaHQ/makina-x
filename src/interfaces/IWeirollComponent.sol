@@ -67,7 +67,6 @@ interface IWeirollComponent {
     function instrCooldownDuration() external view returns (uint256);
 
     /// @notice Prices a position.
-    /// @dev If the position value goes to zero, it is closed.
     /// @param instruction The accounting instruction.
     /// @return value The new position value.
     function accountForPosition(Instruction calldata instruction) external returns (uint256 value);

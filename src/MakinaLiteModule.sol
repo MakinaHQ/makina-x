@@ -285,7 +285,7 @@ contract MakinaLiteModule is
         }
     }
 
-    /// @dev Internal logic to execute token swaps on behalf of Safe using a given swapper.
+    /// @dev Internal logic to execute token swaps on behalf of the Safe using a given swapper.
     function _swapForSafe(ISwapComponent.SwapOrder calldata order) internal {
         _pullERC20FromSafe(order.inputToken, order.inputAmount, address(this));
 
@@ -322,7 +322,7 @@ contract MakinaLiteModule is
         _pullERC20FromSafe(token, amount, flashLoanModule);
     }
 
-    /// @dev Transfers `amount` of ERC20 `token` from the Safe to this module via a module call.
+    /// @dev Transfers `amount` of ERC20 `token` from the Safe to the given recipient via a module call.
     function _pullERC20FromSafe(address token, uint256 amount, address recipient) internal {
         if (token.code.length == 0) {
             revert Errors.InvalidInputToken();

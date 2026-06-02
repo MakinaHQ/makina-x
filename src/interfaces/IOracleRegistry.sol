@@ -68,6 +68,6 @@ interface IOracleRegistry {
 
     /// @notice Sets the price staleness threshold for a given feed.
     /// @param feed The address of the price feed.
-    /// @param threshold The value of staleness threshold.
-    function setFeedStaleThreshold(address feed, uint256 threshold) external;
+    /// @param newThreshold The value of staleness threshold.
+    function setFeedStaleThreshold(address feed, uint256 newThreshold) external;
 }

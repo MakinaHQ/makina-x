@@ -12,15 +12,15 @@ See `SPECIFICATIONS.md` and `PERMISSIONS.md` for more details.
 
 ## Contracts Overview
 
-| Filename                       | Description                                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `MakinaLiteModule.sol`         | Core module managing positions, swaps, bridging, and oracles on behalf of a Safe.                            |
-| `MakinaLiteRegistry.sol`       | Stores addresses of shared protocol components: factory, implementation, fee collector, and bridge encoders. |
-| `ModuleFactory.sol`            | Factory for deterministic deployment of MakinaLiteModule clones.                                             |
-| `FlashLoanModule.sol`          | Handles flash loan requests and callbacks via Morpho.                                                        |
-| `AcrossV4BridgeEncoder.sol`    | Encodes bridge transfer data for Across V4.                                                                  |
-| `CctpV2BridgeEncoder.sol`      | Encodes bridge transfer data for Circle CCTP V2.                                                             |
-| `LayerZeroV2BridgeEncoder.sol` | Encodes bridge transfer data for LayerZero V2.                                                               |
+| Filename                       | Description                                                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `MakinaLiteModule.sol`         | Core module managing positions, swaps, bridging, and oracles on behalf of a Safe.                         |
+| `MakinaLiteRegistry.sol`       | Stores addresses of shared protocol components (e.g. factory, module implementation, or bridge encoders). |
+| `ModuleFactory.sol`            | Factory for deterministic deployment of MakinaLiteModule clones.                                          |
+| `FlashLoanModule.sol`          | Handles flash loan requests and callbacks via Morpho.                                                     |
+| `AcrossV4BridgeEncoder.sol`    | Encodes bridge transfer data for Across V4.                                                               |
+| `CctpV2BridgeEncoder.sol`      | Encodes bridge transfer data for Circle CCTP V2.                                                          |
+| `LayerZeroV2BridgeEncoder.sol` | Encodes bridge transfer data for LayerZero V2.                                                            |
 
 ## Installation
 

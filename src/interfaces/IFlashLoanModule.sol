@@ -30,7 +30,7 @@ interface IFlashLoanModule is IMorphoFlashLoanCallback {
         uint256 amount;
     }
 
-    /// @notice The function to request a flash loan.
+    /// @notice Requests a flash loan.
     /// @param request The request for the flash loan.
     function requestFlashLoan(FlashLoanRequest calldata request) external;
 }

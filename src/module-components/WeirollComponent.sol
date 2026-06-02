@@ -286,7 +286,7 @@ abstract contract WeirollComponent is IWeirollComponent {
     }
 
     /// @dev Computes a hash of the state array, selectively including elements as specified by a bitmap.
-    ///      This enables a weiroll script to have both fixed and variable parameters.
+    ///      This enables a Weiroll script to have both fixed and variable parameters.
     /// @param state The state array to hash.
     /// @param bitmap The bitmap where each bit determines whether the corresponding element in state is included or ignored in the hash computation.
     /// @return hash The hash of the state array.
@@ -308,7 +308,7 @@ abstract contract WeirollComponent is IWeirollComponent {
         return keccak256(hashInput);
     }
 
-    /// @dev Computes the total value of the tokens balances held by safe, priced in given currency.
+    /// @dev Computes the total value of the token balances held by the Safe, priced in given currency.
     function _aggregateTokensValue(address[] calldata tokens, address safe) internal view returns (uint256) {
         uint256 totalValue;
         uint256 atLen = tokens.length;
