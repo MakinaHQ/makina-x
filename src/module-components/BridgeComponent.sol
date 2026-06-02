@@ -19,7 +19,7 @@ abstract contract BridgeComponent is IBridgeComponent {
 
     mapping(uint16 bridgeId => uint256 maxBridgeLossBps) private _maxBridgeLossBps;
     mapping(uint256 foreignChainId => mapping(address recipient => bool isWhitelisted)) private _isWhitelistedRecipient;
-    mapping(uint16 bridgeId => uint256 timestamp) private _lastGuardedBridgeOutTimestamp;
+    mapping(uint16 bridgeId => uint256 timestamp) private _lastGuardedBridgeOutTimestamps;
 
     /// @inheritdoc IBridgeComponent
     uint256 public bridgeCooldownDuration;
@@ -101,11 +101,11 @@ abstract contract BridgeComponent is IBridgeComponent {
     function _checkAndSetCooldown(uint16 bridgeId) internal {
         uint256 timestamp = block.timestamp;
         if (
-            _lastGuardedBridgeOutTimestamp[bridgeId] != 0
-                && timestamp - _lastGuardedBridgeOutTimestamp[bridgeId] < bridgeCooldownDuration
+            _lastGuardedBridgeOutTimestamps[bridgeId] != 0
+                && timestamp - _lastGuardedBridgeOutTimestamps[bridgeId] < bridgeCooldownDuration
         ) {
             revert Errors.OngoingCooldown();
         }
-        _lastGuardedBridgeOutTimestamp[bridgeId] = timestamp;
+        _lastGuardedBridgeOutTimestamps[bridgeId] = timestamp;
     }
 }
