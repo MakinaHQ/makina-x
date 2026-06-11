@@ -122,6 +122,8 @@ When in `FENCED` or `WALLED` mode, bridge transfers enforce:
 - **Route/OFT registration checks**: Bridge-specific checks are enforced depending on the bridge protocol (e.g. route registration for Across V4, OFT registration for LayerZero V2).
 - **Cooldown**: Outgoing transfers via a given bridge are rejected until the configured bridge cooldown duration has elapsed since the previous outgoing transfer through that same bridge. Each bridge ID has an independent cooldown clock.
 
+The bridge loss check compares `inputAmount` and `minOutputAmount` directly, without oracle pricing or decimal scaling. It therefore assumes input and output tokens are homologous (same underlying value, one-to-one) and share the same number of decimals.
+
 #### Supported Bridge Protocols
 
 **Across V4** (`AcrossV4BridgeEncoder`): Routes tokens through the Across V4 SpokePool using `depositV3Now`. Supports configurable token routes (input token to output token per destination chain). In `FENCED` or `WALLED` mode, only registered routes are allowed.
