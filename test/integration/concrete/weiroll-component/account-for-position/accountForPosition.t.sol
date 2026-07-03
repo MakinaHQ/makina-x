@@ -25,7 +25,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
 
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
     }
 
     function test_RevertWhen_ReentrantCall() public {
@@ -38,13 +38,13 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
 
         tokenA.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(IWeirollComponent.accountForPosition, (borrowAcctInstruction))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
+        makinaXModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -52,31 +52,31 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_RevertWhen_CallerNotOperator() public {
         IWeirollComponent.Instruction memory instruction;
 
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_RevertWhen_ProvidedInstructionNonAccountingType() public {
@@ -85,7 +85,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
 
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         vm.prank(operator);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_RevertWhen_ProvidedProofInvalid() public {
@@ -96,58 +96,58 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         IWeirollComponent.Instruction memory instruction =
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault2));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong posId
         instruction = _build4626AccountingInstruction(address(safe), SUPPLY_POS_ID, address(vault));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong isDebt
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.isDebt = true;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong groupId
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.groupId = 1;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong affected tokens list
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.affectedTokens[0] = address(0);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong commands
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.commands[2] = instruction.commands[1];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong state
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.state[2] = instruction.state[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         // use wrong bitmap
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         instruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
 
         vm.stopPrank();
 
         // use new root
         vm.prank(address(safe));
-        makinaLiteModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
+        makinaXModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
         instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_RevertGiven_InstructionFails() public {
@@ -157,7 +157,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_RevertGiven_AccountingOutputStateInvalid() public {
@@ -167,7 +167,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         delete instruction.state[1];
         vm.expectRevert(Errors.InvalidAccounting.selector);
         vm.prank(operator);
-        makinaLiteModule.accountForPosition(instruction);
+        makinaXModule.accountForPosition(instruction);
     }
 
     function test_AccountForPosition_4626() public {
@@ -176,14 +176,14 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         uint256 yield = 1e18;
         deal(address(tokenB), address(vault), tokenB.balanceOf(address(vault)) + yield, true);
 
-        uint256 expectedValue = makinaLiteModule.getReferencePrice(address(tokenB))
+        uint256 expectedValue = makinaXModule.getReferencePrice(address(tokenB))
             * vault.previewRedeem(vault.balanceOf(address(safe))) / 1e18;
 
         IWeirollComponent.Instruction memory instruction =
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
 
         vm.prank(operator);
-        uint256 value = makinaLiteModule.accountForPosition(instruction);
+        uint256 value = makinaXModule.accountForPosition(instruction);
 
         assertEq(vault.balanceOf(address(safe)), safeBal);
         assertEq(value, expectedValue);

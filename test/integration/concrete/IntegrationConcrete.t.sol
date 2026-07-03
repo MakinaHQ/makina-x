@@ -3,9 +3,9 @@ pragma solidity 0.8.35;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import {IMakinaLiteGovernable} from "src/interfaces/IMakinaLiteGovernable.sol";
-import {IMakinaLiteModule} from "src/interfaces/IMakinaLiteModule.sol";
-import {MakinaLiteModule} from "src/MakinaLiteModule.sol";
+import {IMakinaXGovernable} from "src/interfaces/IMakinaXGovernable.sol";
+import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
+import {MakinaXModule} from "src/MakinaXModule.sol";
 import {MockBorrowModule} from "test/mocks/MockBorrowModule.sol";
 import {MockERC20} from "test/mocks/MockERC20.sol";
 import {MockERC4626} from "test/mocks/MockERC4626.sol";
@@ -35,7 +35,7 @@ abstract contract Integration_Concrete_Test is Base_Test, VMInstructionHelper {
     MockSupplyModule internal supplyModule;
     MockBorrowModule internal borrowModule;
 
-    MakinaLiteModule internal makinaLiteModule;
+    MakinaXModule internal makinaXModule;
 
     function setUp() public virtual override {
         Base_Test.setUp();
@@ -54,11 +54,11 @@ abstract contract Integration_Concrete_Test is Base_Test, VMInstructionHelper {
         borrowModule = new MockBorrowModule(IERC20(tokenB));
 
         vm.prank(dao);
-        makinaLiteModule = MakinaLiteModule(
+        makinaXModule = MakinaXModule(
             payable(moduleFactory.createModule(
-                    IMakinaLiteModule.MakinaLiteModuleInitParams({
+                    IMakinaXModule.MakinaXModuleInitParams({
                         safe: address(safe),
-                        initialOperatingMode: IMakinaLiteGovernable.OperatingMode.OPEN,
+                        initialOperatingMode: IMakinaXGovernable.OperatingMode.OPEN,
                         initialAllowedInstrRoot: bytes32(0),
                         initialMaxPositionIncreaseLossBps: DEFAULT_MAX_POS_INCREASE_LOSS_BPS,
                         initialMaxPositionDecreaseLossBps: DEFAULT_MAX_POS_DECREASE_LOSS_BPS,
@@ -66,7 +66,7 @@ abstract contract Integration_Concrete_Test is Base_Test, VMInstructionHelper {
                         initialMaxSwapLossBps: DEFAULT_MAX_SWAP_LOSS_BPS,
                         initialSwapCooldownDuration: DEFAULT_SWAP_COOLDOWN_DURATION
                     }),
-                    IMakinaLiteModule.MakinaLiteModuleServiceParams({
+                    IMakinaXModule.MakinaXModuleServiceParams({
                         initialProvider: dao, initialSwapFeeRate: DEFAULT_SWAP_FEE_RATE
                     }),
                     TEST_DEPLOYMENT_SALT,
@@ -76,36 +76,32 @@ abstract contract Integration_Concrete_Test is Base_Test, VMInstructionHelper {
 
         vm.startPrank(address(safe));
 
-        makinaLiteModule.addOperator(operator);
-        makinaLiteModule.addGuardian(guardian);
+        makinaXModule.addOperator(operator);
+        makinaXModule.addGuardian(guardian);
 
-        makinaLiteModule.setFeedRoute(
-            address(tokenA), address(aPriceFeed1), 2 * DEFAULT_PF_STALE_THRSHLD, address(0), 0
-        );
-        makinaLiteModule.setFeedRoute(
-            address(tokenB), address(bPriceFeed1), 2 * DEFAULT_PF_STALE_THRSHLD, address(0), 0
-        );
+        makinaXModule.setFeedRoute(address(tokenA), address(aPriceFeed1), 2 * DEFAULT_PF_STALE_THRSHLD, address(0), 0);
+        makinaXModule.setFeedRoute(address(tokenB), address(bPriceFeed1), 2 * DEFAULT_PF_STALE_THRSHLD, address(0), 0);
 
-        makinaLiteModule.setSwapperTargets(TEST_SWAPPER_ID, address(dex), address(dex));
+        makinaXModule.setSwapperTargets(TEST_SWAPPER_ID, address(dex), address(dex));
 
         vm.stopPrank();
     }
 
     modifier whileInFencedMode() {
         vm.prank(address(safe));
-        makinaLiteModule.setOperatingMode(IMakinaLiteGovernable.OperatingMode.FENCED);
+        makinaXModule.setOperatingMode(IMakinaXGovernable.OperatingMode.FENCED);
         _;
     }
 
     modifier whileInWalledMode() {
         vm.prank(address(safe));
-        makinaLiteModule.setOperatingMode(IMakinaLiteGovernable.OperatingMode.WALLED);
+        makinaXModule.setOperatingMode(IMakinaXGovernable.OperatingMode.WALLED);
         _;
     }
 
     modifier withAccountingCurrency(address currency) {
         vm.prank(address(safe));
-        makinaLiteModule.setAccountingCurrency(currency);
+        makinaXModule.setAccountingCurrency(currency);
         _;
     }
 }

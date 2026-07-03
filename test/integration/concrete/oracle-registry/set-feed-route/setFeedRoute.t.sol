@@ -25,12 +25,12 @@ contract SetFeedRoute_Integration_Concrete_Test is Integration_Concrete_Test {
 
         tokenA.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(IOracleRegistry.setFeedRoute, (address(0), address(0), 0, address(0), 0))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 }

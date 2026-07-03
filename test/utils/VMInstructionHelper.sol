@@ -477,7 +477,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
     function _buildFlashLoanModuleDummyLoopInstruction(
         uint256 _posId,
         address _flashLoanModule,
-        address _makinaLiteModule,
+        address _makinaXModule,
         address _token,
         uint256 _amount,
         IWeirollComponent.Instruction memory _manageFlashloanInstruction
@@ -493,7 +493,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         );
 
         IFlashLoanModule.FlashLoanRequest memory flashLoanRequest = IFlashLoanModule.FlashLoanRequest({
-            taker: address(_makinaLiteModule),
+            taker: address(_makinaXModule),
             provider: IFlashLoanModule.FlashLoanProvider.MORPHO,
             instruction: _manageFlashloanInstruction,
             token: _token,

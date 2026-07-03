@@ -3,7 +3,7 @@ pragma solidity 0.8.35;
 
 import {Errors} from "src/libraries/Errors.sol";
 import {IBridgeComponent} from "src/interfaces/IBridgeComponent.sol";
-import {IMakinaLiteGovernable} from "src/interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "src/interfaces/IMakinaXGovernable.sol";
 import {IOFT} from "src/interfaces/IOFT.sol";
 
 import {LayerZeroV2BridgeEncoder_Integration_Concrete_Test} from "../LayerZeroV2BridgeEncoder.t.sol";
@@ -14,7 +14,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
     function setUp() public override {
         LayerZeroV2BridgeEncoder_Integration_Concrete_Test.setUp();
 
-        vm.startPrank(address(makinaLiteModule));
+        vm.startPrank(address(makinaXModule));
     }
 
     function test_RevertGiven_LzEndpointIdNotRegistered() public {
@@ -116,7 +116,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         assertEq(approvalTarget, address(0));
         assertEq(executionTarget, address(oft));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaXModule))));
     }
 
     function test_GetBridgeTransferData_NativeOFT_WithGasOption() public {
@@ -153,7 +153,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         assertEq(approvalTarget, address(0));
         assertEq(executionTarget, address(oft));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaXModule))));
     }
 
     function test_GetBridgeTransferData_OFTAdapter_WithoutGasOption() public {
@@ -189,7 +189,7 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         assertEq(approvalTarget, address(oftAdapter));
         assertEq(executionTarget, address(oftAdapter));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaXModule))));
     }
 
     function test_GetBridgeTransferData_OFTAdapter_WithGasOption() public {
@@ -226,23 +226,23 @@ contract GetBridgeTransferData_LayerZeroV2BridgeEncoder_Integration_Concrete_Tes
         assertEq(approvalTarget, address(oftAdapter));
         assertEq(executionTarget, address(oftAdapter));
         assertEq(value, expectedFee);
-        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaLiteModule))));
+        assertEq(cd, abi.encodeCall(IOFT.send, (sendParam, mf, address(makinaXModule))));
     }
 
     function test_RevertGiven_OftNotRegistered_WhileInFencedMode() public {
-        _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode.FENCED);
+        _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode.FENCED);
     }
 
     function test_RevertGiven_OftNotRegistered_WhileInWalledMode() public {
-        _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode.WALLED);
+        _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode.WALLED);
     }
 
-    function _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode mode) internal {
+    function _test_RevertGiven_OftNotRegistered_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode mode) internal {
         vm.stopPrank();
         vm.prank(address(safe));
-        makinaLiteModule.setOperatingMode(mode);
+        makinaXModule.setOperatingMode(mode);
 
-        vm.startPrank(address(makinaLiteModule));
+        vm.startPrank(address(makinaXModule));
 
         IBridgeComponent.BridgeOrder memory order;
         order.destinationChainId = L2_CHAIN_ID;

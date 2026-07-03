@@ -14,7 +14,7 @@ contract GetBridgeTransferData_AcrossV4BridgeEncoder_Integration_Concrete_Test i
         IBridgeComponent.BridgeOrder memory order;
         order.extraData = abi.encode(address(0), uint32(0));
 
-        vm.prank(address(makinaLiteModule));
+        vm.prank(address(makinaXModule));
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
             acrossV4BridgeEncoder.getBridgeTransferData(order);
 
@@ -47,7 +47,7 @@ contract GetBridgeTransferData_AcrossV4BridgeEncoder_Integration_Concrete_Test i
             extraData: abi.encode(outputToken, ACROSS_V4_FILL_DEADLINE_OFFSET)
         });
 
-        vm.prank(address(makinaLiteModule));
+        vm.prank(address(makinaXModule));
         (address approvalTarget, address executionTarget, uint256 value, bytes memory cd) =
             acrossV4BridgeEncoder.getBridgeTransferData(order);
 
@@ -88,7 +88,7 @@ contract GetBridgeTransferData_AcrossV4BridgeEncoder_Integration_Concrete_Test i
         order.extraData = abi.encode(address(0), uint32(0));
 
         vm.expectRevert(Errors.RouteNotRegistered.selector);
-        vm.prank(address(makinaLiteModule));
+        vm.prank(address(makinaXModule));
         acrossV4BridgeEncoder.getBridgeTransferData(order);
     }
 }

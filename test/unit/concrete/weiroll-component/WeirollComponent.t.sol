@@ -12,7 +12,7 @@ abstract contract WeirollComponent_Unit_Concrete_Test is Unit_Concrete_Test {
     function setUp() public virtual override {
         Unit_Concrete_Test.setUp();
 
-        weirollComponent = IWeirollComponent(address(makinaLiteModule));
+        weirollComponent = IWeirollComponent(address(makinaXModule));
     }
 }
 

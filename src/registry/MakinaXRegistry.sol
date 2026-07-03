@@ -5,24 +5,24 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 
-import {IMakinaLiteRegistry} from "../interfaces/IMakinaLiteRegistry.sol";
+import {IMakinaXRegistry} from "../interfaces/IMakinaXRegistry.sol";
 import {Errors} from "../libraries/Errors.sol";
 
-contract MakinaLiteRegistry layout at erc7201("makina.storage.MakinaLiteRegistry")
+contract MakinaXRegistry layout at erc7201("makina.storage.MakinaXRegistry")
     is
     AccessManagedUpgradeable,
-    IMakinaLiteRegistry
+    IMakinaXRegistry
 {
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     address public moduleFactory;
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     address public moduleImplementation;
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     address public feeCollector;
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     address public flashLoanModule;
 
     mapping(uint16 bridgeId => address encoder) private _bridgeEncoders;
@@ -35,7 +35,7 @@ contract MakinaLiteRegistry layout at erc7201("makina.storage.MakinaLiteRegistry
         __AccessManaged_init(initialAuthority);
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function getBridgeEncoder(uint16 bridgeId) external view returns (address) {
         address encoder = _bridgeEncoders[bridgeId];
         if (encoder == address(0)) {
@@ -44,31 +44,31 @@ contract MakinaLiteRegistry layout at erc7201("makina.storage.MakinaLiteRegistry
         return encoder;
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function setModuleFactory(address newModuleFactory) external restricted {
         emit ModuleFactoryChanged(moduleFactory, newModuleFactory);
         moduleFactory = newModuleFactory;
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function setModuleImplementation(address newImplementation) external restricted {
         emit ModuleImplementationChanged(moduleImplementation, newImplementation);
         moduleImplementation = newImplementation;
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function setFeeCollector(address newFeeCollector) external restricted {
         emit FeeCollectorChanged(feeCollector, newFeeCollector);
         feeCollector = newFeeCollector;
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function setFlashLoanModule(address newFlashLoanModule) external restricted {
         emit FlashLoanModuleChanged(flashLoanModule, newFlashLoanModule);
         flashLoanModule = newFlashLoanModule;
     }
 
-    /// @inheritdoc IMakinaLiteRegistry
+    /// @inheritdoc IMakinaXRegistry
     function setBridgeEncoder(uint16 bridgeId, address bridgeEncoder) external restricted {
         emit BridgeEncoderChanged(bridgeId, _bridgeEncoders[bridgeId], bridgeEncoder);
         _bridgeEncoders[bridgeId] = bridgeEncoder;

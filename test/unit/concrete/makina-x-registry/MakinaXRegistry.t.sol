@@ -3,15 +3,15 @@ pragma solidity 0.8.35;
 
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 
-import {IMakinaLiteRegistry} from "src/interfaces/IMakinaLiteRegistry.sol";
+import {IMakinaXRegistry} from "src/interfaces/IMakinaXRegistry.sol";
 
 import {Unit_Concrete_Test} from "../UnitConcrete.t.sol";
 
-contract MakinaLiteRegistry_Unit_Concrete_Test is Unit_Concrete_Test {
+contract MakinaXRegistry_Unit_Concrete_Test is Unit_Concrete_Test {
     function test_Getters() public view {
         assertEq(registry.authority(), address(accessManager));
         assertEq(registry.moduleFactory(), address(moduleFactory));
-        assertEq(registry.moduleImplementation(), address(makinaLiteModuleImplem));
+        assertEq(registry.moduleImplementation(), address(makinaXModuleImplem));
         assertEq(registry.feeCollector(), dao);
         assertEq(registry.flashLoanModule(), address(flashLoanModule));
     }
@@ -25,7 +25,7 @@ contract MakinaLiteRegistry_Unit_Concrete_Test is Unit_Concrete_Test {
         address newFeeCollector = makeAddr("newFeeCollector");
 
         vm.expectEmit(true, true, false, false, address(registry));
-        emit IMakinaLiteRegistry.FeeCollectorChanged(dao, newFeeCollector);
+        emit IMakinaXRegistry.FeeCollectorChanged(dao, newFeeCollector);
         vm.prank(dao);
         registry.setFeeCollector(newFeeCollector);
 
@@ -41,7 +41,7 @@ contract MakinaLiteRegistry_Unit_Concrete_Test is Unit_Concrete_Test {
         address newFlashLoanModule = makeAddr("newFlashLoanModule");
 
         vm.expectEmit(true, true, false, false, address(registry));
-        emit IMakinaLiteRegistry.FlashLoanModuleChanged(address(flashLoanModule), newFlashLoanModule);
+        emit IMakinaXRegistry.FlashLoanModuleChanged(address(flashLoanModule), newFlashLoanModule);
         vm.prank(dao);
         registry.setFlashLoanModule(newFlashLoanModule);
 

@@ -4,31 +4,31 @@ pragma solidity 0.8.35;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {Errors} from "../libraries/Errors.sol";
-import {IMakinaLiteGovernable} from "../interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "../interfaces/IMakinaXGovernable.sol";
 
-abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
-    /// @inheritdoc IMakinaLiteGovernable
+abstract contract MakinaXGovernable is Initializable, IMakinaXGovernable {
+    /// @inheritdoc IMakinaXGovernable
     address public override safe;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     address public override provider;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     mapping(address account => bool isOperator) public override isOperator;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     mapping(address account => bool isGuardian) public override isGuardian;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     bool public override paused;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     bool public override suspendedByProvider;
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     OperatingMode public override operatingMode;
 
-    function __MakinaLiteGovernable_init(address _safe, address _provider, OperatingMode _initialOperatingMode)
+    function __MakinaXGovernable_init(address _safe, address _provider, OperatingMode _initialOperatingMode)
         internal
         onlyInitializing
     {
@@ -79,14 +79,14 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         _;
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function setProvider(address newProvider) external override onlyProvider {
         if (newProvider != provider) {
             _setProvider(newProvider);
         }
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function addOperator(address newOperator) external override onlySafe {
         if (isOperator[newOperator]) {
             revert Errors.AlreadyOperator();
@@ -95,7 +95,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         emit OperatorAdded(newOperator);
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function removeOperator(address operator) external override onlySafe {
         if (!isOperator[operator]) {
             revert Errors.NotOperator();
@@ -104,7 +104,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         emit OperatorRemoved(operator);
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function addGuardian(address newGuardian) external override onlySafe {
         if (isGuardian[newGuardian]) {
             revert Errors.AlreadyGuardian();
@@ -112,7 +112,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         _addGuardian(newGuardian);
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function removeGuardian(address guardian) external override onlySafe {
         if (guardian == safe) {
             revert Errors.ProtectedGuardian();
@@ -124,12 +124,12 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         emit GuardianRemoved(guardian);
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function setOperatingMode(OperatingMode newMode) external override onlySafe {
         _setOperatingMode(newMode);
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function suspend() external override onlyProvider {
         if (!suspendedByProvider) {
             emit Suspended();
@@ -137,7 +137,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         }
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function unsuspend() external override onlyProvider {
         if (suspendedByProvider) {
             emit Unsuspended();
@@ -145,7 +145,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         }
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function pause() external override onlyGuardian {
         if (!paused) {
             emit Paused(msg.sender);
@@ -153,7 +153,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         }
     }
 
-    /// @inheritdoc IMakinaLiteGovernable
+    /// @inheritdoc IMakinaXGovernable
     function unpause() external override onlyGuardian {
         if (paused) {
             emit Unpaused(msg.sender);
@@ -161,7 +161,7 @@ abstract contract MakinaLiteGovernable is Initializable, IMakinaLiteGovernable {
         }
     }
 
-    /// @dev Internal function to update the MakinaLite service account.
+    /// @dev Internal function to update the MakinaX service account.
     function _setProvider(address newProvider) internal {
         emit ProviderChanged(provider, newProvider);
         provider = newProvider;

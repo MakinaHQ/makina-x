@@ -2,27 +2,27 @@
 pragma solidity 0.8.35;
 
 import {Errors} from "src/libraries/Errors.sol";
-import {IMakinaLiteModule} from "src/interfaces/IMakinaLiteModule.sol";
+import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
 import {MockERC20} from "test/mocks/MockERC20.sol";
 
 import {Integration_Concrete_Test} from "../../IntegrationConcrete.t.sol";
 
 contract SweepNative_Integration_Concrete_Test is Integration_Concrete_Test {
     function test_RevertWhen_ReentrantCall() public {
-        deal(address(tokenA), address(makinaLiteModule), 1e18, true);
+        deal(address(tokenA), address(makinaXModule), 1e18, true);
 
         tokenA.scheduleReenter(
-            MockERC20.Type.Before, address(makinaLiteModule), abi.encodeCall(IMakinaLiteModule.sweepNative, ())
+            MockERC20.Type.Before, address(makinaXModule), abi.encodeCall(IMakinaXModule.sweepNative, ())
         );
 
         vm.expectRevert();
         vm.prank(address(safe));
-        makinaLiteModule.sweepERC20(address(tokenA));
+        makinaXModule.sweepERC20(address(tokenA));
     }
 
     function test_RevertGiven_CallerNotSafe() public {
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.sweepNative();
+        makinaXModule.sweepNative();
     }
 
     function test_RevertGiven_SweepNativeFailed() public {
@@ -30,18 +30,18 @@ contract SweepNative_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.SweepNativeFailed.selector);
         vm.prank(address(safe));
-        makinaLiteModule.sweepNative();
+        makinaXModule.sweepNative();
     }
 
     function test_SweepNative() public {
         uint256 amount = 3e18;
 
-        deal(address(makinaLiteModule), amount);
+        deal(address(makinaXModule), amount);
 
         vm.prank(address(safe));
-        makinaLiteModule.sweepNative();
+        makinaXModule.sweepNative();
 
-        assertEq(address(makinaLiteModule).balance, 0);
+        assertEq(address(makinaXModule).balance, 0);
         assertEq(address(safe).balance, amount);
     }
 }

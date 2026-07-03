@@ -2,15 +2,15 @@
 pragma solidity ^0.8.28;
 
 import {IBridgeComponent} from "./IBridgeComponent.sol";
-import {IMakinaLiteContext} from "./IMakinaLiteContext.sol";
-import {IMakinaLiteGovernable} from "./IMakinaLiteGovernable.sol";
+import {IMakinaXContext} from "./IMakinaXContext.sol";
+import {IMakinaXGovernable} from "./IMakinaXGovernable.sol";
 import {IOracleRegistry} from "./IOracleRegistry.sol";
 import {ISwapComponent} from "./ISwapComponent.sol";
 import {IWeirollComponent} from "./IWeirollComponent.sol";
 
-interface IMakinaLiteModule is
-    IMakinaLiteContext,
-    IMakinaLiteGovernable,
+interface IMakinaXModule is
+    IMakinaXContext,
+    IMakinaXGovernable,
     IOracleRegistry,
     IWeirollComponent,
     ISwapComponent,
@@ -25,9 +25,9 @@ interface IMakinaLiteModule is
     /// @param initialInstrCooldownDuration The cooldown duration (in seconds) for position management while in WALLED mode.
     /// @param initialMaxSwapLossBps The maximum allowed loss in basis points for swap operations while in FENCED or WALLED mode.
     /// @param initialSwapCooldownDuration The cooldown duration (in seconds) for swap operations while in FENCED or WALLED mode.
-    struct MakinaLiteModuleInitParams {
+    struct MakinaXModuleInitParams {
         address safe;
-        IMakinaLiteGovernable.OperatingMode initialOperatingMode;
+        IMakinaXGovernable.OperatingMode initialOperatingMode;
         bytes32 initialAllowedInstrRoot;
         uint256 initialMaxPositionIncreaseLossBps;
         uint256 initialMaxPositionDecreaseLossBps;
@@ -37,9 +37,9 @@ interface IMakinaLiteModule is
     }
 
     /// @notice Protocol-controlled service initialization parameters.
-    /// @param initialProvider The address of the MakinaLite service account.
+    /// @param initialProvider The address of the MakinaX service account.
     /// @param initialSwapFeeRate The fee rate for swap operations, 1e18 = 100%.
-    struct MakinaLiteModuleServiceParams {
+    struct MakinaXModuleServiceParams {
         address initialProvider;
         uint256 initialSwapFeeRate;
     }
@@ -47,10 +47,8 @@ interface IMakinaLiteModule is
     /// @notice Initializes the module with the given parameters.
     /// @param params The strategy and risk initialization parameters.
     /// @param serviceParams The protocol-controlled service initialization parameters.
-    function initialize(
-        MakinaLiteModuleInitParams calldata params,
-        MakinaLiteModuleServiceParams calldata serviceParams
-    ) external;
+    function initialize(MakinaXModuleInitParams calldata params, MakinaXModuleServiceParams calldata serviceParams)
+        external;
 
     /// @notice Sweeps the entire balance of a given ERC20 token to the Safe.
     /// @param token The address of the ERC20 token to sweep.

@@ -10,25 +10,25 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {BridgeComponent} from "./module-components/BridgeComponent.sol";
 import {IBridgeComponent} from "./interfaces/IBridgeComponent.sol";
-import {IMakinaLiteModule} from "./interfaces/IMakinaLiteModule.sol";
-import {IMakinaLiteRegistry} from "./interfaces/IMakinaLiteRegistry.sol";
+import {IMakinaXModule} from "./interfaces/IMakinaXModule.sol";
+import {IMakinaXRegistry} from "./interfaces/IMakinaXRegistry.sol";
 import {ISafe} from "./interfaces/ISafe.sol";
 import {Errors} from "./libraries/Errors.sol";
-import {MakinaLiteContext} from "./utils/MakinaLiteContext.sol";
-import {MakinaLiteGovernable} from "./utils/MakinaLiteGovernable.sol";
+import {MakinaXContext} from "./utils/MakinaXContext.sol";
+import {MakinaXGovernable} from "./utils/MakinaXGovernable.sol";
 import {OracleRegistry, IOracleRegistry} from "./module-components/OracleRegistry.sol";
 import {WeirollComponent, IWeirollComponent} from "./module-components/WeirollComponent.sol";
 import {SwapComponent, ISwapComponent} from "./module-components/SwapComponent.sol";
 
-contract MakinaLiteModule is
-    MakinaLiteContext,
-    MakinaLiteGovernable,
+contract MakinaXModule is
+    MakinaXContext,
+    MakinaXGovernable,
     OracleRegistry,
     WeirollComponent,
     SwapComponent,
     BridgeComponent,
     ReentrancyGuard,
-    IMakinaLiteModule
+    IMakinaXModule
 {
     using Math for uint256;
     using SafeERC20 for IERC20Metadata;
@@ -39,16 +39,17 @@ contract MakinaLiteModule is
     /// @dev Full scale value for fee rates
     uint256 private constant MAX_FEE_RATE = 1e18;
 
-    constructor(address _registry, address _weirollVm) MakinaLiteContext(_registry) WeirollComponent(_weirollVm) {
+    constructor(address _registry, address _weirollVm) MakinaXContext(_registry) WeirollComponent(_weirollVm) {
         _disableInitializers();
     }
 
-    /// @inheritdoc IMakinaLiteModule
-    function initialize(
-        MakinaLiteModuleInitParams calldata params,
-        MakinaLiteModuleServiceParams calldata serviceParams
-    ) external override initializer {
-        __MakinaLiteGovernable_init(params.safe, serviceParams.initialProvider, params.initialOperatingMode);
+    /// @inheritdoc IMakinaXModule
+    function initialize(MakinaXModuleInitParams calldata params, MakinaXModuleServiceParams calldata serviceParams)
+        external
+        override
+        initializer
+    {
+        __MakinaXGovernable_init(params.safe, serviceParams.initialProvider, params.initialOperatingMode);
 
         _setAllowedInstrRoot(params.initialAllowedInstrRoot);
 
@@ -156,7 +157,7 @@ contract MakinaLiteModule is
         external
         override
     {
-        address flashLoanModule = IMakinaLiteRegistry(registry).flashLoanModule();
+        address flashLoanModule = IMakinaXRegistry(registry).flashLoanModule();
         _manageFlashLoan(instruction, token, amount, safe, flashLoanModule);
     }
 
@@ -248,7 +249,7 @@ contract MakinaLiteModule is
         whenOperational
         onlyOperator
     {
-        address encoder = IMakinaLiteRegistry(registry).getBridgeEncoder(order.bridgeId);
+        address encoder = IMakinaXRegistry(registry).getBridgeEncoder(order.bridgeId);
         _pullERC20FromSafe(order.inputToken, order.inputAmount, address(this));
         _sendOutBridgeTransfer(order, encoder, operatingMode != OperatingMode.OPEN);
     }
@@ -274,13 +275,13 @@ contract MakinaLiteModule is
         _removeRecipient(foreignChainId, recipient);
     }
 
-    /// @inheritdoc IMakinaLiteModule
+    /// @inheritdoc IMakinaXModule
     function sweepERC20(address token) external nonReentrant onlySafe {
         uint256 bal = IERC20Metadata(token).balanceOf(address(this));
         IERC20Metadata(token).safeTransfer(safe, bal);
     }
 
-    /// @inheritdoc IMakinaLiteModule
+    /// @inheritdoc IMakinaXModule
     function sweepNative() external nonReentrant onlySafe {
         (bool success,) = safe.call{value: address(this).balance}("");
         if (!success) {
@@ -363,7 +364,7 @@ contract MakinaLiteModule is
 
         uint256 fee = amountOut.mulDiv(swapFeeRate, MAX_FEE_RATE);
         if (fee > 0) {
-            address feeCollector = IMakinaLiteRegistry(registry).feeCollector();
+            address feeCollector = IMakinaXRegistry(registry).feeCollector();
             IERC20Metadata(tokenOut).safeTransfer(feeCollector, fee);
         }
 

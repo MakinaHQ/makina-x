@@ -6,15 +6,15 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
-import {IMakinaLiteModule} from "src/interfaces/IMakinaLiteModule.sol";
+import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
 import {AcrossV4BridgeEncoder} from "src/bridge-encoders/AcrossV4BridgeEncoder.sol";
 import {CctpV2BridgeEncoder} from "src/bridge-encoders/CctpV2BridgeEncoder.sol";
 import {LayerZeroV2BridgeEncoder} from "src/bridge-encoders/LayerZeroV2BridgeEncoder.sol";
-import {MakinaLiteRegistry} from "src/registry/MakinaLiteRegistry.sol";
+import {MakinaXRegistry} from "src/registry/MakinaXRegistry.sol";
 
-import {DeployMakinaLite} from "script/deployments/DeployMakinaLite.s.sol";
-import {SetupMakinaLiteAM} from "script/deployments/SetupMakinaLiteAM.s.sol";
-import {SetupMakinaLiteRegistry} from "script/deployments/SetupMakinaLiteRegistry.s.sol";
+import {DeployMakinaX} from "script/deployments/DeployMakinaX.s.sol";
+import {SetupMakinaXAM} from "script/deployments/SetupMakinaXAM.s.sol";
+import {SetupMakinaXRegistry} from "script/deployments/SetupMakinaXRegistry.s.sol";
 
 import {Roles} from "../utils/Roles.sol";
 import {Base_Test} from "../base/Base.t.sol";
@@ -22,9 +22,9 @@ import {Base_Test} from "../base/Base.t.sol";
 contract Deploy_Scripts_Test is Base_Test {
     using stdJson for string;
 
-    DeployMakinaLite public deployMakinaLite;
-    SetupMakinaLiteRegistry public setupMakinaLiteRegistry;
-    SetupMakinaLiteAM public setupMakinaLiteAM;
+    DeployMakinaX public deployMakinaX;
+    SetupMakinaXRegistry public setupMakinaXRegistry;
+    SetupMakinaXAM public setupMakinaXAM;
 
     function setUp() public override {
         vm.setEnv("INFRA_INPUT_FILENAME", "Mainnet-Test.json");
@@ -36,49 +36,49 @@ contract Deploy_Scripts_Test is Base_Test {
     }
 
     function test_LoadedState() public {
-        deployMakinaLite = new DeployMakinaLite();
+        deployMakinaX = new DeployMakinaX();
 
-        address accessManager = vm.parseJsonAddress(deployMakinaLite.inputJson(), ".accessManager");
+        address accessManager = vm.parseJsonAddress(deployMakinaX.inputJson(), ".accessManager");
         assertTrue(accessManager != address(0));
 
-        address weirollVM = vm.parseJsonAddress(deployMakinaLite.inputJson(), ".weirollVM");
+        address weirollVM = vm.parseJsonAddress(deployMakinaX.inputJson(), ".weirollVM");
         assertTrue(weirollVM != address(0));
 
-        address feeCollector = vm.parseJsonAddress(deployMakinaLite.inputJson(), ".feeCollector");
+        address feeCollector = vm.parseJsonAddress(deployMakinaX.inputJson(), ".feeCollector");
         assertTrue(feeCollector != address(0));
 
-        address morpho = vm.parseJsonAddress(deployMakinaLite.inputJson(), ".flashLoanProviders.morpho");
+        address morpho = vm.parseJsonAddress(deployMakinaX.inputJson(), ".flashLoanProviders.morpho");
         assertTrue(morpho != address(0));
 
-        assertTrue(vm.keyExistsJson(deployMakinaLite.inputJson(), ".bridgesTargets[0]"));
+        assertTrue(vm.keyExistsJson(deployMakinaX.inputJson(), ".bridgesTargets[0]"));
     }
 
-    function testScript_DeployMakinaLite() public {
+    function testScript_DeployMakinaX() public {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
-        deployMakinaLite = new DeployMakinaLite();
-        deployMakinaLite.run();
+        deployMakinaX = new DeployMakinaX();
+        deployMakinaX.run();
 
-        setupMakinaLiteRegistry = new SetupMakinaLiteRegistry();
-        setupMakinaLiteRegistry.run();
+        setupMakinaXRegistry = new SetupMakinaXRegistry();
+        setupMakinaXRegistry.run();
 
-        (MakinaLiteInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
-            deployMakinaLite.deployment();
+        (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
+            deployMakinaX.deployment();
 
-        string memory inputJson = deployMakinaLite.inputJson();
+        string memory inputJson = deployMakinaX.inputJson();
 
         address expectedAccessManager = vm.parseJsonAddress(inputJson, ".accessManager");
         address expectedWeirollVM = vm.parseJsonAddress(inputJson, ".weirollVM");
         address expectedFeeCollector = vm.parseJsonAddress(inputJson, ".feeCollector");
         address expectedMorpho = vm.parseJsonAddress(inputJson, ".flashLoanProviders.morpho");
 
-        // Check that MakinaLiteRegistry is correctly set up
+        // Check that MakinaXRegistry is correctly set up
         assertEq(infra.registry.moduleFactory(), address(infra.moduleFactory));
-        assertEq(infra.registry.moduleImplementation(), infra.makinaLiteModuleImplem);
+        assertEq(infra.registry.moduleImplementation(), infra.makinaXModuleImplem);
         assertEq(infra.registry.feeCollector(), expectedFeeCollector);
         assertEq(infra.registry.flashLoanModule(), address(infra.flashLoanModule));
 
-        // Check that MakinaLiteRegistry and ModuleFactory are authed by the provided access manager
+        // Check that MakinaXRegistry and ModuleFactory are authed by the provided access manager
         assertEq(infra.registry.authority(), expectedAccessManager);
         assertEq(infra.moduleFactory.authority(), expectedAccessManager);
 
@@ -86,9 +86,9 @@ contract Deploy_Scripts_Test is Base_Test {
         assertEq(infra.flashLoanModule.moduleFactory(), address(infra.moduleFactory));
         assertEq(infra.flashLoanModule.morpho(), expectedMorpho);
 
-        // Check that MakinaLiteModule implementation is correctly wired up
-        assertEq(IMakinaLiteModule(infra.makinaLiteModuleImplem).registry(), address(infra.registry));
-        assertEq(IMakinaLiteModule(infra.makinaLiteModuleImplem).weirollVm(), address(expectedWeirollVM));
+        // Check that MakinaXModule implementation is correctly wired up
+        assertEq(IMakinaXModule(infra.makinaXModuleImplem).registry(), address(infra.registry));
+        assertEq(IMakinaXModule(infra.makinaXModuleImplem).weirollVm(), address(expectedWeirollVM));
 
         // Check that bridge encoders are correctly set up and registered
         assertEq(bridgeIds.length, bridgeEncoders.length);
@@ -118,18 +118,18 @@ contract Deploy_Scripts_Test is Base_Test {
         }
     }
 
-    function testScript_SetupMakinaLiteAM() public {
+    function testScript_SetupMakinaXAM() public {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
-        deployMakinaLite = new DeployMakinaLite();
-        deployMakinaLite.run();
+        deployMakinaX = new DeployMakinaX();
+        deployMakinaX.run();
 
-        setupMakinaLiteAM = new SetupMakinaLiteAM();
-        setupMakinaLiteAM.run();
+        setupMakinaXAM = new SetupMakinaXAM();
+        setupMakinaXAM.run();
 
-        (MakinaLiteInfra memory infra,,) = deployMakinaLite.deployment();
+        (MakinaXInfra memory infra,,) = deployMakinaX.deployment();
 
-        address accessManager = vm.parseJsonAddress(deployMakinaLite.inputJson(), ".accessManager");
+        address accessManager = vm.parseJsonAddress(deployMakinaX.inputJson(), ".accessManager");
 
         // Transparent proxy admins' upgradeAndCall is guarded by INFRA_UPGRADE_ROLE
         assertEq(
@@ -143,13 +143,13 @@ contract Deploy_Scripts_Test is Base_Test {
             Roles.INFRA_UPGRADE_ROLE
         );
 
-        // MakinaLiteRegistry setters are guarded by INFRA_CONFIG_ROLE
+        // MakinaXRegistry setters are guarded by INFRA_CONFIG_ROLE
         bytes4[5] memory registrySetterSelectors = [
-            MakinaLiteRegistry.setModuleFactory.selector,
-            MakinaLiteRegistry.setModuleImplementation.selector,
-            MakinaLiteRegistry.setFeeCollector.selector,
-            MakinaLiteRegistry.setFlashLoanModule.selector,
-            MakinaLiteRegistry.setBridgeEncoder.selector
+            MakinaXRegistry.setModuleFactory.selector,
+            MakinaXRegistry.setModuleImplementation.selector,
+            MakinaXRegistry.setFeeCollector.selector,
+            MakinaXRegistry.setFlashLoanModule.selector,
+            MakinaXRegistry.setBridgeEncoder.selector
         ];
         for (uint256 i; i < registrySetterSelectors.length; ++i) {
             assertEq(

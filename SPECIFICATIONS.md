@@ -1,10 +1,10 @@
-# MakinaLite Specifications
+# MakinaX Specifications
 
 ## Protocol
 
-### MakinaLiteModule
+### MakinaXModule
 
-The `MakinaLiteModule` contract is the core component of MakinaLite. It is deployed as a [Safe module](https://docs.safe.global/advanced/smart-account-modules), enabling it to execute transactions on behalf of the Safe without requiring multisig confirmations for each action. The module composes several components: position management, token swaps, cross-chain bridging, and price oracles.
+The `MakinaXModule` contract is the core component of MakinaX. It is deployed as a [Safe module](https://docs.safe.global/advanced/smart-account-modules), enabling it to execute transactions on behalf of the Safe without requiring multisig confirmations for each action. The module composes several components: position management, token swaps, cross-chain bridging, and price oracles.
 
 Each module is deployed as a minimal clone via the `ModuleFactory` and initialized with configuration parameters including the Safe address, provider address, allowed instruction Merkle root, loss limits, and swap fee rate.
 
@@ -88,7 +88,7 @@ When in `FENCED` or `WALLED` mode, swap operations enforce a value loss limit (`
 
 #### Fees
 
-A configurable swap fee rate, set by the provider, is applied to every swap output. Fees are transferred to the fee collector address stored in the `MakinaLiteRegistry`. The fee rate is expressed as a fraction of `1e18` (i.e., `1e18` = 100%).
+A configurable swap fee rate, set by the provider, is applied to every swap output. Fees are transferred to the fee collector address stored in the `MakinaXRegistry`. The fee rate is expressed as a fraction of `1e18` (i.e., `1e18` = 100%).
 
 #### Cooldown
 
@@ -111,7 +111,7 @@ By default, position values are expressed in the reference currency (address(0))
 
 The `BridgeComponent` enables cross-chain token transfers through a modular bridge encoder system. The module supports multiple bridge protocols via a set of `BridgeEncoder` contracts that each encode the appropriate calldata for a given external bridge.
 
-For each bridge transfer, the module pulls the input token from the Safe and delegates the calldata encoding to the corresponding bridge encoder registered in the `MakinaLiteRegistry` for the given bridge ID.
+For each bridge transfer, the module pulls the input token from the Safe and delegates the calldata encoding to the corresponding bridge encoder registered in the `MakinaXRegistry` for the given bridge ID.
 
 #### Operating Mode Restrictions
 
@@ -150,9 +150,9 @@ The flow operates as follows:
 
 The `FlashLoanModule` validates that the taker is a module deployed by the `ModuleFactory` and that the caller is the taker's Safe. Reentrancy is prevented via transient storage flags.
 
-### MakinaLiteRegistry
+### MakinaXRegistry
 
-The `MakinaLiteRegistry` contract stores addresses of shared protocol components. It is a single upgradeable instance that all modules reference for:
+The `MakinaXRegistry` contract stores addresses of shared protocol components. It is a single upgradeable instance that all modules reference for:
 
 - The `ModuleFactory` address.
 - The module implementation address (used by the factory for cloning).
@@ -162,7 +162,7 @@ The `MakinaLiteRegistry` contract stores addresses of shared protocol components
 
 ### ModuleFactory
 
-The `ModuleFactory` deploys new `MakinaLiteModule` instances as [ERC-1167](https://eips.ethereum.org/EIPS/eip-1167) minimal clones. Each clone is initialized with the provided parameters and tracked by the factory.
+The `ModuleFactory` deploys new `MakinaXModule` instances as [ERC-1167](https://eips.ethereum.org/EIPS/eip-1167) minimal clones. Each clone is initialized with the provided parameters and tracked by the factory.
 
 There are two ways to deploy a module:
 
@@ -171,16 +171,16 @@ There are two ways to deploy a module:
 
 ### Access Control
 
-The MakinaLite protocol uses two access control systems:
+The MakinaX protocol uses two access control systems:
 
-**Module-level roles** — The `MakinaLiteGovernable` contract defines four roles: Safe, Provider, Operator, and Guardian. These are implemented as simple address mappings and modifiers. The Safe is the sole authority over configuration. Operators execute strategy actions. Guardians can pause the module. The provider manages service-level parameters and can suspend operations. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
+**Module-level roles** — The `MakinaXGovernable` contract defines four roles: Safe, Provider, Operator, and Guardian. These are implemented as simple address mappings and modifiers. The Safe is the sole authority over configuration. Operators execute strategy actions. Guardians can pause the module. The provider manages service-level parameters and can suspend operations. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
 
-**Infrastructure roles** — The `MakinaLiteRegistry`, `ModuleFactory`, and Bridge Encoder contracts implement [OpenZeppelin AccessManagedUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol), delegating authorization to an external `AccessManager` instance. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
+**Infrastructure roles** — The `MakinaXRegistry`, `ModuleFactory`, and Bridge Encoder contracts implement [OpenZeppelin AccessManagedUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol), delegating authorization to an external `AccessManager` instance. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
 
-Roles used by MakinaLite infrastructure contracts are a subset of those used in Makina Core contracts, and are defined as follows:
+Roles used by MakinaX infrastructure contracts are a subset of those used in Makina Core contracts, and are defined as follows:
 
 - `ADMIN_ROLE` - roleId `0` - Super admin of the Access Manager. Authorized to perform Access Manager configuration actions.
-- `INFRA_CONFIG_ROLE` - roleId `1` - Authorized to configure the MakinaLite registry, module factory, and bridge encoder contracts.
-- `STRATEGY_DEPLOYMENT_ROLE` - roleId `2` - Authorized to deploy new MakinaLite modules.
-- `INFRA_UPGRADE_ROLE` - roleId `6` - Authorized to upgrade proxies of the MakinaLite infrastructure contracts.
+- `INFRA_CONFIG_ROLE` - roleId `1` - Authorized to configure the MakinaX registry, module factory, and bridge encoder contracts.
+- `STRATEGY_DEPLOYMENT_ROLE` - roleId `2` - Authorized to deploy new MakinaX modules.
+- `INFRA_UPGRADE_ROLE` - roleId `6` - Authorized to upgrade proxies of the MakinaX infrastructure contracts.
 - `GUARDIAN_ROLE` - roleId `7` - Authorized to cancel operations scheduled with the other roles.

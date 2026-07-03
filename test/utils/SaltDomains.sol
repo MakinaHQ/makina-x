@@ -2,7 +2,7 @@
 pragma solidity 0.8.35;
 
 abstract contract SaltDomains {
-    bytes32 internal constant MAKINA_LITE_REGISTRY_SALT_DOMAIN = keccak256("makina.salt.MakinaLiteRegistry");
+    bytes32 internal constant MAKINA_X_REGISTRY_SALT_DOMAIN = keccak256("makina.salt.MakinaXRegistry");
 
     bytes32 internal constant MODULE_FACTORY_SALT_DOMAIN = keccak256("makina.salt.ModuleFactory");
 
