@@ -25,7 +25,7 @@ contract OnMorphoFlashLoan_Integration_Concrete_Test is Integration_Concrete_Tes
         uint256 flashLoanAmount = 3e18;
 
         IFlashLoanModule.FlashLoanRequest memory request = IFlashLoanModule.FlashLoanRequest({
-            taker: address(makinaLiteModule),
+            taker: address(makinaXModule),
             provider: IFlashLoanModule.FlashLoanProvider.MORPHO,
             instruction: instruction,
             token: address(tokenA),
@@ -34,7 +34,7 @@ contract OnMorphoFlashLoan_Integration_Concrete_Test is Integration_Concrete_Tes
 
         deal(address(tokenA), address(morpho), flashLoanAmount);
 
-        vm.expectRevert(Errors.DirectManageFlashLoanCall.selector, address(makinaLiteModule));
+        vm.expectRevert(Errors.DirectManageFlashLoanCall.selector, address(makinaXModule));
         vm.prank(address(safe));
         flashLoanModule.requestFlashLoan(request);
     }

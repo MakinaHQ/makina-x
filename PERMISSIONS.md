@@ -1,9 +1,9 @@
-# MakinaLite Access Control
+# MakinaX Access Control
 
-MakinaLite uses two distinct access control systems:
+MakinaX uses two distinct access control systems:
 
-- **Module-level roles** (Safe, Provider, Operator, Guardian) govern the `MakinaLiteModule` and are managed directly through simple role mappings.
-- **Infrastructure roles** govern the `MakinaLiteRegistry`, `ModuleFactory`, and Bridge Encoder contracts through [OpenZeppelin AccessManager](https://docs.openzeppelin.com/contracts/5.x/api/access#AccessManager).
+- **Module-level roles** (Safe, Provider, Operator, Guardian) govern the `MakinaXModule` and are managed directly through simple role mappings.
+- **Infrastructure roles** govern the `MakinaXRegistry`, `ModuleFactory`, and Bridge Encoder contracts through [OpenZeppelin AccessManager](https://docs.openzeppelin.com/contracts/5.x/api/access#AccessManager).
 
 ## Module-Level Roles
 
@@ -56,9 +56,9 @@ Guardians serve as emergency contacts that can halt module operations. The Safe 
 
 ## Infrastructure Roles
 
-The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured by the associated `AccessManager` instance. Roles used by MakinaLite infrastructure contracts are a subset of those used in Makina Core, and are assigned at deployment.
+The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured by the associated `AccessManager` instance. Roles used by MakinaX infrastructure contracts are a subset of those used in Makina Core, and are assigned at deployment.
 
-### MakinaLiteRegistry
+### MakinaXRegistry
 
 - `INFRA_CONFIG_ROLE` (roleId `1`)
   - Can set the address of ModuleFactory.
@@ -78,7 +78,7 @@ The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `
   - Can enable or disable permissionless deployment.
 
 - `STRATEGY_DEPLOYMENT_ROLE` (roleId `2`)
-  - Can deploy new MakinaLiteModule clones with caller-provided service parameters.
+  - Can deploy new MakinaXModule clones with caller-provided service parameters.
 
 - `INFRA_UPGRADE_ROLE` (roleId `6`)
   - Can upgrade implementation via associated ProxyAdmin.

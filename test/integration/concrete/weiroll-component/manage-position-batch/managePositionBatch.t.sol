@@ -21,13 +21,13 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
 
         tokenB.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(IWeirollComponent.managePositionBatch, (mgmtInstructions, acctInstructions))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.managePositionBatch(mgmtInstructions, acctInstructions);
+        makinaXModule.managePositionBatch(mgmtInstructions, acctInstructions);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -35,31 +35,31 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
+        makinaXModule.managePositionBatch(dummyInstructions, dummyInstructions);
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
+        makinaXModule.managePositionBatch(dummyInstructions, dummyInstructions);
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
+        makinaXModule.managePositionBatch(dummyInstructions, dummyInstructions);
     }
 
     function test_RevertWhen_CallerNotOperator() public {
         IWeirollComponent.Instruction[] memory dummyInstructions;
 
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.managePositionBatch(dummyInstructions, dummyInstructions);
+        makinaXModule.managePositionBatch(dummyInstructions, dummyInstructions);
     }
 
     function test_RevertWhen_MismatchedLengths() public {
@@ -68,7 +68,7 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
 
         vm.expectRevert(Errors.MismatchedLengths.selector);
         vm.prank(operator);
-        makinaLiteModule.managePositionBatch(mgmtInstructions, acctInstructions);
+        makinaXModule.managePositionBatch(mgmtInstructions, acctInstructions);
     }
 
     function test_ManagePositionBatch() public {
@@ -109,17 +109,17 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         uint256 expectedSupplyPosValue = supplyInputAmount * PRICE_B_E;
         uint256 expectedBorrowPosValue = borrowInputAmount * PRICE_B_E;
 
-        vm.expectEmit(true, false, false, true, address(makinaLiteModule));
+        vm.expectEmit(true, false, false, true, address(makinaXModule));
         emit IWeirollComponent.PositionManaged(true, guarded, SUPPLY_POS_ID, expectedSupplyPosValue);
 
-        vm.expectEmit(true, false, false, true, address(makinaLiteModule));
+        vm.expectEmit(true, false, false, true, address(makinaXModule));
         emit IWeirollComponent.PositionManaged(true, guarded, BORROW_POS_ID, expectedBorrowPosValue);
 
         uint256[] memory values;
         int256[] memory changes;
 
         vm.prank(operator);
-        (values, changes) = makinaLiteModule.managePositionBatch(mgmtInstructions, acctInstructions);
+        (values, changes) = makinaXModule.managePositionBatch(mgmtInstructions, acctInstructions);
 
         assertEq(values.length, 2);
         assertEq(changes.length, 2);

@@ -22,7 +22,7 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
 
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
     }
 
     function test_RevertWhen_ReentrantCall() public {
@@ -35,7 +35,7 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
 
         tokenB.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(
                 IWeirollComponent.accountForPositionBatch, (new IWeirollComponent.Instruction[](0), new uint256[](0))
             )
@@ -43,7 +43,7 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
+        makinaXModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -51,24 +51,24 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.accountForPositionBatch(instructions, new uint256[](0));
+        makinaXModule.accountForPositionBatch(instructions, new uint256[](0));
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.accountForPositionBatch(instructions, new uint256[](0));
+        makinaXModule.accountForPositionBatch(instructions, new uint256[](0));
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.accountForPositionBatch(instructions, new uint256[](0));
+        makinaXModule.accountForPositionBatch(instructions, new uint256[](0));
     }
 
     function test_AccountForPositionBatch() public {
@@ -80,7 +80,7 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
         IWeirollComponent.Instruction memory supplyAcctInstruction =
             _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
         vm.prank(operator);
-        makinaLiteModule.managePosition(supplyMgmtInstruction, supplyAcctInstruction);
+        makinaXModule.managePosition(supplyMgmtInstruction, supplyAcctInstruction);
 
         // create borrow position
         uint256 borrowInputAmount = 1e18;
@@ -90,14 +90,14 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
         IWeirollComponent.Instruction memory borrowAcctInstruction =
             _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
         vm.prank(operator);
-        makinaLiteModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
+        makinaXModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
 
         // account for supply and borrow positions in a batch
         IWeirollComponent.Instruction[] memory accountingInstructions = new IWeirollComponent.Instruction[](2);
         accountingInstructions[0] = supplyAcctInstruction;
         accountingInstructions[1] = borrowAcctInstruction;
         vm.prank(operator);
-        uint256[] memory values = makinaLiteModule.accountForPositionBatch(accountingInstructions, new uint256[](0));
+        uint256[] memory values = makinaXModule.accountForPositionBatch(accountingInstructions, new uint256[](0));
 
         assertEq(values.length, 2);
 
@@ -105,6 +105,6 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
         assertEq(values[1], borrowInputAmount * PRICE_B_E);
 
         vm.prank(operator);
-        makinaLiteModule.accountForPositionBatch(accountingInstructions, new uint256[](0));
+        makinaXModule.accountForPositionBatch(accountingInstructions, new uint256[](0));
     }
 }

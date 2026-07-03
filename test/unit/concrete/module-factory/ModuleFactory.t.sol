@@ -43,7 +43,7 @@ contract Getters_Setters_ModuleFactory_Unit_Concrete_Test is Unit_Concrete_Test 
 
     function test_Getters() public view {
         assertEq(moduleFactory.registry(), address(registry));
-        assertTrue(moduleFactory.isMakinaLiteModule(address(makinaLiteModule)));
+        assertTrue(moduleFactory.isMakinaXModule(address(makinaXModule)));
         assertEq(moduleFactory.defaultProvider(), dao);
         assertEq(moduleFactory.defaultSwapFeeRate(), DEFAULT_SWAP_FEE_RATE);
         assertFalse(moduleFactory.freeDeployment());

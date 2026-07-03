@@ -12,7 +12,7 @@ abstract contract BridgeComponent_Unit_Concrete_Test is Unit_Concrete_Test {
     function setUp() public virtual override {
         Unit_Concrete_Test.setUp();
 
-        bridgeComponent = IBridgeComponent(address(makinaLiteModule));
+        bridgeComponent = IBridgeComponent(address(makinaXModule));
     }
 }
 

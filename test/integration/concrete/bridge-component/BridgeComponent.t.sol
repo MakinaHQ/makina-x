@@ -55,9 +55,9 @@ abstract contract BridgeComponent_Integration_Concrete_Test is Integration_Concr
         vm.stopPrank();
 
         vm.startPrank(address(safe));
-        makinaLiteModule.setMaxBridgeLossBps(ACROSS_V4_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
-        makinaLiteModule.setMaxBridgeLossBps(LAYER_ZERO_V2_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
-        makinaLiteModule.setMaxBridgeLossBps(CCTP_V2_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
+        makinaXModule.setMaxBridgeLossBps(ACROSS_V4_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
+        makinaXModule.setMaxBridgeLossBps(LAYER_ZERO_V2_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
+        makinaXModule.setMaxBridgeLossBps(CCTP_V2_BRIDGE_ID, DEFAULT_MAX_BRIDGE_LOSS_BPS);
         vm.stopPrank();
     }
 }

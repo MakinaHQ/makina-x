@@ -25,14 +25,14 @@ contract MockMorpho is IMorpho {
         IERC20(token).transfer(caller, amount);
 
         if (reentrancyMode) {
-            (, address makinaLiteModule,) = abi.decode(data, (address, address, IWeirollComponent.Instruction));
+            (, address makinaXModule,) = abi.decode(data, (address, address, IWeirollComponent.Instruction));
 
             IWeirollComponent.Instruction memory instruction;
 
             MockERC20(token)
                 .scheduleReenter(
                     MockERC20.Type.Before,
-                    makinaLiteModule,
+                    makinaXModule,
                     abi.encodeCall(IWeirollComponent.manageFlashLoan, (instruction, address(0), 0))
                 );
         }

@@ -1,8 +1,8 @@
 {
-  "name": "makina-lite",
+  "name": "makina-x",
   "version": "v1.0.0",
-  "description": "MakinaLite contracts",
-  "repository": "https://github.com/MakinaHQ/makina-lite.git",
+  "description": "MakinaX contracts",
+  "repository": "https://github.com/MakinaHQ/makina-x.git",
   "author": "MakinaHQ",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {

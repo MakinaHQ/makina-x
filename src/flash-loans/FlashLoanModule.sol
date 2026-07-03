@@ -7,7 +7,7 @@ import {TransientSlot} from "@openzeppelin/contracts/utils/TransientSlot.sol";
 
 import {Errors} from "../libraries/Errors.sol";
 import {IFlashLoanModule} from "../interfaces/IFlashLoanModule.sol";
-import {IMakinaLiteModule} from "../interfaces/IMakinaLiteModule.sol";
+import {IMakinaXModule} from "../interfaces/IMakinaXModule.sol";
 import {IModuleFactory} from "../interfaces/IModuleFactory.sol";
 import {IMorpho} from "../interfaces/IMorpho.sol";
 import {IMorphoFlashLoanCallback} from "../interfaces/IMorphoFlashLoanCallback.sol";
@@ -21,7 +21,7 @@ contract FlashLoanModule is IFlashLoanModule {
     bytes32 private constant EXPECTED_DATA_HASH_SLOT =
         0x5a3c23131f48fa65e051159c96653778099b9ec7df69c3ed6471d5a36605bd00;
 
-    /// @notice Address of the MakinaLiteModule factory.
+    /// @notice Address of the MakinaXModule factory.
     address public immutable moduleFactory;
 
     /// @notice Address of the Morpho contract.
@@ -39,8 +39,8 @@ contract FlashLoanModule is IFlashLoanModule {
     /// @inheritdoc IFlashLoanModule
     function requestFlashLoan(FlashLoanRequest calldata request) external override {
         if (
-            !IModuleFactory(moduleFactory).isMakinaLiteModule(request.taker)
-                || IMakinaLiteModule(request.taker).safe() != msg.sender
+            !IModuleFactory(moduleFactory).isMakinaXModule(request.taker)
+                || IMakinaXModule(request.taker).safe() != msg.sender
         ) {
             revert Errors.InvalidFlashLoanTaker();
         }
@@ -55,10 +55,10 @@ contract FlashLoanModule is IFlashLoanModule {
 
         _consumeExpectedDataHash(data);
 
-        (address token, address makinaLiteModule, IWeirollComponent.Instruction memory instruction) =
+        (address token, address makinaXModule, IWeirollComponent.Instruction memory instruction) =
             abi.decode(data, (address, address, IWeirollComponent.Instruction));
 
-        _handleFlashLoanCallback(makinaLiteModule, instruction, token, assets);
+        _handleFlashLoanCallback(makinaXModule, instruction, token, assets);
 
         IERC20(token).forceApprove(morpho, assets);
     }
@@ -93,14 +93,14 @@ contract FlashLoanModule is IFlashLoanModule {
         EXPECTED_DATA_HASH_SLOT.asBytes32().tstore(bytes32(0));
     }
 
-    /// @dev Delegates management of flash-loaned funds to the specified MakinaLiteModule.
+    /// @dev Delegates management of flash-loaned funds to the specified MakinaXModule.
     function _handleFlashLoanCallback(
-        address makinaLiteModule,
+        address makinaXModule,
         IWeirollComponent.Instruction memory instruction,
         address token,
         uint256 amount
     ) internal {
-        IERC20(token).forceApprove(makinaLiteModule, amount);
-        IMakinaLiteModule(makinaLiteModule).manageFlashLoan(instruction, token, amount);
+        IERC20(token).forceApprove(makinaXModule, amount);
+        IMakinaXModule(makinaXModule).manageFlashLoan(instruction, token, amount);
     }
 }

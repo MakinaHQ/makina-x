@@ -2,7 +2,7 @@
 pragma solidity 0.8.35;
 
 import {IBridgeComponent} from "src/interfaces/IBridgeComponent.sol";
-import {IMakinaLiteGovernable} from "src/interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "src/interfaces/IMakinaXGovernable.sol";
 
 import {Errors} from "src/libraries/Errors.sol";
 import {MockERC20} from "test/mocks/MockERC20.sol";
@@ -32,13 +32,13 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         tokenA.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(IBridgeComponent.sendOutBridgeTransfer, (order))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -46,31 +46,31 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertWhen_CallerNotOperator() public {
         IBridgeComponent.BridgeOrder memory order;
 
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertWhen_BridgeEncoderDoesNotExist() public {
@@ -78,7 +78,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         vm.expectRevert(Errors.BridgeEncoderDoesNotExist.selector);
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertGiven_InvalidInputToken() public {
@@ -87,7 +87,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         vm.expectRevert(Errors.InvalidInputToken.selector);
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertGiven_TransferFromSafeFailed() public {
@@ -99,15 +99,15 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         vm.expectRevert(Errors.TransferFromSafeFailed.selector);
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function test_RevertGiven_OngoingCooldown_WhileInFencedMode() public {
-        _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode.FENCED);
+        _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode.FENCED);
     }
 
     function test_RevertGiven_OngoingCooldown_WhileInWalledMode() public {
-        _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode.WALLED);
+        _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode.WALLED);
     }
 
     function test_RevertGiven_RecipientNotWhitelisted_WhileInFencedMode() public whileInFencedMode {
@@ -167,10 +167,10 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
         );
 
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         assertEq(tokenA.balanceOf(address(safe)), 0);
-        assertEq(tokenA.balanceOf(address(makinaLiteModule)), 0);
+        assertEq(tokenA.balanceOf(address(makinaXModule)), 0);
         assertEq(tokenA.balanceOf(address(acrossV4SpokePool)), inputAmount);
     }
 
@@ -181,7 +181,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
             * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
 
         deal(address(oft), address(safe), inputAmount, true);
-        deal(address(makinaLiteModule), maxValue);
+        deal(address(makinaXModule), maxValue);
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: LAYER_ZERO_V2_BRIDGE_ID,
@@ -201,16 +201,16 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
             minOutputAmount,
             DEFAULT_LAYER_ZERO_V2_LZ_RECEIVE_GAS,
             maxValue,
-            address(makinaLiteModule)
+            address(makinaXModule)
         );
 
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         assertEq(oft.balanceOf(address(safe)), 0);
-        assertEq(oft.balanceOf(address(makinaLiteModule)), 0);
+        assertEq(oft.balanceOf(address(makinaXModule)), 0);
         assertEq(oft.totalSupply(), 0);
-        assertEq(address(makinaLiteModule).balance, 0);
+        assertEq(address(makinaXModule).balance, 0);
         assertEq(address(oft).balance, maxValue);
     }
 
@@ -221,7 +221,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
             * DEFAULT_LAYER_ZERO_V2_GAS_PRICE;
 
         deal(address(tokenA), address(safe), inputAmount, true);
-        deal(address(makinaLiteModule), maxValue);
+        deal(address(makinaXModule), maxValue);
 
         IBridgeComponent.BridgeOrder memory order = IBridgeComponent.BridgeOrder({
             bridgeId: LAYER_ZERO_V2_BRIDGE_ID,
@@ -241,16 +241,16 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
             minOutputAmount,
             DEFAULT_LAYER_ZERO_V2_LZ_RECEIVE_GAS,
             maxValue,
-            address(makinaLiteModule)
+            address(makinaXModule)
         );
 
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         assertEq(tokenA.balanceOf(address(safe)), 0);
-        assertEq(tokenA.balanceOf(address(makinaLiteModule)), 0);
+        assertEq(tokenA.balanceOf(address(makinaXModule)), 0);
         assertEq(tokenA.balanceOf(address(oftAdapter)), inputAmount);
-        assertEq(address(makinaLiteModule).balance, 0);
+        assertEq(address(makinaXModule).balance, 0);
         assertEq(address(oftAdapter).balance, maxValue);
     }
 
@@ -283,16 +283,16 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
         );
 
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         assertEq(tokenA.balanceOf(address(safe)), 0);
-        assertEq(tokenA.balanceOf(address(makinaLiteModule)), 0);
+        assertEq(tokenA.balanceOf(address(makinaXModule)), 0);
         assertEq(tokenA.totalSupply(), 0);
     }
 
-    function _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaLiteGovernable.OperatingMode mode) internal {
+    function _test_RevertGiven_OngoingCooldown_WhileInNonOpenMode(IMakinaXGovernable.OperatingMode mode) internal {
         vm.prank(address(safe));
-        makinaLiteModule.addRecipient(L2_CHAIN_ID, address(safe));
+        makinaXModule.addRecipient(L2_CHAIN_ID, address(safe));
 
         uint256 inputAmount = 1e18;
         uint256 minOutputAmount = (inputAmount * (10_000 - DEFAULT_MAX_BRIDGE_LOSS_BPS) / 10_000);
@@ -311,24 +311,24 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         // set a bridge cooldown duration
         vm.prank(address(safe));
-        makinaLiteModule.setBridgeCooldownDuration(1 minutes);
+        makinaXModule.setBridgeCooldownDuration(1 minutes);
 
         // send one transfer while in open mode
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         // change operation mode
         vm.prank(address(safe));
-        makinaLiteModule.setOperatingMode(mode);
+        makinaXModule.setOperatingMode(mode);
 
         vm.startPrank(operator);
 
         // send a transfer to trigger cooldown
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
 
         // try sending another transfer while cooldown is ongoing
         vm.expectRevert(Errors.OngoingCooldown.selector);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function _test_RevertGiven_RecipientNotWhitelisted_WhileInNonOpenMode() internal {
@@ -340,7 +340,7 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
 
         vm.expectRevert(Errors.RecipientNotWhitelisted.selector);
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 
     function _test_RevertGiven_MaxValueLossExceeded_WhileInNonOpenMode() internal {
@@ -356,10 +356,10 @@ contract SendOutBridgeTransfer_Integration_Concrete_Test is BridgeComponent_Inte
         order.minOutputAmount = (inputAmount * (10_000 - DEFAULT_MAX_BRIDGE_LOSS_BPS) / 10_000) - 1;
 
         vm.prank(address(safe));
-        makinaLiteModule.addRecipient(L2_CHAIN_ID, address(safe));
+        makinaXModule.addRecipient(L2_CHAIN_ID, address(safe));
 
         vm.expectRevert(Errors.MaxValueLossExceeded.selector);
         vm.prank(operator);
-        makinaLiteModule.sendOutBridgeTransfer(order);
+        makinaXModule.sendOutBridgeTransfer(order);
     }
 }

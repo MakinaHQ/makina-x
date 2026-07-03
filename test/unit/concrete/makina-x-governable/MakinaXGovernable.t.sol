@@ -2,23 +2,23 @@
 pragma solidity 0.8.35;
 
 import {Errors} from "src/libraries/Errors.sol";
-import {IMakinaLiteGovernable} from "src/interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "src/interfaces/IMakinaXGovernable.sol";
 
 import {Unit_Concrete_Test} from "../UnitConcrete.t.sol";
 
-contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
-    IMakinaLiteGovernable internal makinaGovernable;
+contract MakinaXGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
+    IMakinaXGovernable internal makinaGovernable;
 
     function setUp() public virtual override {
         Unit_Concrete_Test.setUp();
 
-        makinaGovernable = IMakinaLiteGovernable(address(makinaLiteModule));
+        makinaGovernable = IMakinaXGovernable(address(makinaXModule));
     }
 
     function test_Getters() public view {
         assertEq(makinaGovernable.safe(), address(safe));
         assertEq(makinaGovernable.provider(), dao);
-        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaLiteGovernable.OperatingMode.OPEN));
+        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaXGovernable.OperatingMode.OPEN));
     }
 
     function test_SetProvider_RevertWhen_CallerUnauthorized() public {
@@ -30,7 +30,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         address newProvider = makeAddr("newProvider");
 
         vm.expectEmit(true, true, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.ProviderChanged(dao, newProvider);
+        emit IMakinaXGovernable.ProviderChanged(dao, newProvider);
         vm.prank(dao);
         makinaGovernable.setProvider(newProvider);
 
@@ -57,7 +57,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         address newOperator = makeAddr("newOperator");
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.OperatorAdded(newOperator);
+        emit IMakinaXGovernable.OperatorAdded(newOperator);
         vm.prank(address(safe));
         makinaGovernable.addOperator(newOperator);
 
@@ -84,7 +84,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         makinaGovernable.addOperator(operator);
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.OperatorRemoved(operator);
+        emit IMakinaXGovernable.OperatorRemoved(operator);
         vm.prank(address(safe));
         makinaGovernable.removeOperator(operator);
 
@@ -111,7 +111,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         address newGuardian = makeAddr("newGuardian");
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.GuardianAdded(newGuardian);
+        emit IMakinaXGovernable.GuardianAdded(newGuardian);
         vm.prank(address(safe));
         makinaGovernable.addGuardian(newGuardian);
 
@@ -144,7 +144,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         makinaGovernable.addGuardian(guardian);
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.GuardianRemoved(guardian);
+        emit IMakinaXGovernable.GuardianRemoved(guardian);
         vm.prank(address(safe));
         makinaGovernable.removeGuardian(guardian);
 
@@ -153,23 +153,23 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
 
     function test_SetOperatingMode_RevertWhen_CallerUnauthorized() public {
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedCaller.selector));
-        makinaGovernable.setOperatingMode(IMakinaLiteGovernable.OperatingMode.FENCED);
+        makinaGovernable.setOperatingMode(IMakinaXGovernable.OperatingMode.FENCED);
     }
 
     function test_SetOperatingMode() public {
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.OperatingModeChanged(IMakinaLiteGovernable.OperatingMode.FENCED);
+        emit IMakinaXGovernable.OperatingModeChanged(IMakinaXGovernable.OperatingMode.FENCED);
         vm.prank(address(safe));
-        makinaGovernable.setOperatingMode(IMakinaLiteGovernable.OperatingMode.FENCED);
+        makinaGovernable.setOperatingMode(IMakinaXGovernable.OperatingMode.FENCED);
 
-        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaLiteGovernable.OperatingMode.FENCED));
+        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaXGovernable.OperatingMode.FENCED));
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.OperatingModeChanged(IMakinaLiteGovernable.OperatingMode.WALLED);
+        emit IMakinaXGovernable.OperatingModeChanged(IMakinaXGovernable.OperatingMode.WALLED);
         vm.prank(address(safe));
-        makinaGovernable.setOperatingMode(IMakinaLiteGovernable.OperatingMode.WALLED);
+        makinaGovernable.setOperatingMode(IMakinaXGovernable.OperatingMode.WALLED);
 
-        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaLiteGovernable.OperatingMode.WALLED));
+        assertEq(uint256(makinaGovernable.operatingMode()), uint256(IMakinaXGovernable.OperatingMode.WALLED));
     }
 
     function test_Suspend_RevertWhen_CallerUnauthorized() public {
@@ -179,7 +179,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
 
     function test_Suspend() public {
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.Suspended();
+        emit IMakinaXGovernable.Suspended();
         vm.prank(dao);
         makinaGovernable.suspend();
 
@@ -202,7 +202,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         makinaGovernable.suspend();
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.Unsuspended();
+        emit IMakinaXGovernable.Unsuspended();
         vm.prank(dao);
         makinaGovernable.unsuspend();
 
@@ -226,7 +226,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         makinaGovernable.addGuardian(guardian);
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.Paused(guardian);
+        emit IMakinaXGovernable.Paused(guardian);
         vm.prank(guardian);
         makinaGovernable.pause();
 
@@ -254,7 +254,7 @@ contract MakinaLiteGovernable_Unit_Concrete_Test is Unit_Concrete_Test {
         makinaGovernable.pause();
 
         vm.expectEmit(true, false, false, false, address(makinaGovernable));
-        emit IMakinaLiteGovernable.Unpaused(guardian);
+        emit IMakinaXGovernable.Unpaused(guardian);
         vm.prank(guardian);
         makinaGovernable.unpause();
 

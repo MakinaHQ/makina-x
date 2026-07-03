@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-interface IMakinaLiteGovernable {
+interface IMakinaXGovernable {
     /// @notice Operating modes of a module, ordered by increasing restriction.
     enum OperatingMode {
         OPEN,
@@ -23,7 +23,7 @@ interface IMakinaLiteGovernable {
     /// @notice Address of the Safe.
     function safe() external view returns (address);
 
-    /// @notice Address of the MakinaLite service account.
+    /// @notice Address of the MakinaX service account.
     function provider() external view returns (address);
 
     /// @notice Account => Whether the account is an operator.

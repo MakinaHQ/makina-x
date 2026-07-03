@@ -8,10 +8,10 @@ import {CreateXUtils} from "./utils/CreateXUtils.sol";
 
 import {Base} from "../../test/base/Base.sol";
 
-contract DeployMakinaLite is Base, Script, CreateXUtils {
+contract DeployMakinaX is Base, Script, CreateXUtils {
     using stdJson for string;
 
-    MakinaLiteInfra private _infra;
+    MakinaXInfra private _infra;
     uint16[] private _bridgeIds;
     address[] private _bridgeEncoders;
 
@@ -27,16 +27,16 @@ contract DeployMakinaLite is Base, Script, CreateXUtils {
         string memory basePath = string.concat(vm.projectRoot(), "/script/deployments/");
 
         // load input params
-        string memory inputPath = string.concat(basePath, "inputs/makina-lite-infra/");
+        string memory inputPath = string.concat(basePath, "inputs/makina-x-infra/");
         inputPath = string.concat(inputPath, inputFilename);
         inputJson = vm.readFile(inputPath);
 
         // output path to later save deployed contracts
-        outputPath = string.concat(basePath, "outputs/makina-lite-infra/");
+        outputPath = string.concat(basePath, "outputs/makina-x-infra/");
         outputPath = string.concat(outputPath, outputFilename);
     }
 
-    function deployment() public view returns (MakinaLiteInfra memory, uint16[] memory, address[] memory) {
+    function deployment() public view returns (MakinaXInfra memory, uint16[] memory, address[] memory) {
         return (_infra, _bridgeIds, _bridgeEncoders);
     }
 
@@ -62,7 +62,7 @@ contract DeployMakinaLite is Base, Script, CreateXUtils {
         uint256 defaultSwapFeeRate = vm.parseJsonUint(inputJson, ".defaultSwapFeeRate");
         bool freeDeployment = vm.parseJsonBool(inputJson, ".freeDeployment");
 
-        _infra = deployMakinaLiteInfra(
+        _infra = deployMakinaXInfra(
             accessManager, weirollVM, flProviders, defaultProvider, defaultSwapFeeRate, freeDeployment
         );
 
@@ -73,12 +73,12 @@ contract DeployMakinaLite is Base, Script, CreateXUtils {
         // finish broadcasting transactions
         vm.stopBroadcast();
 
-        string memory key = "key-deploy-makina-lite-infra-output-file";
+        string memory key = "key-deploy-makina-x-infra-output-file";
 
         // write to file
-        vm.serializeAddress(key, "MakinaLiteRegistry", address(_infra.registry));
+        vm.serializeAddress(key, "MakinaXRegistry", address(_infra.registry));
         vm.serializeAddress(key, "ModuleFactory", address(_infra.moduleFactory));
-        vm.serializeAddress(key, "MakinaLiteModuleImplem", _infra.makinaLiteModuleImplem);
+        vm.serializeAddress(key, "MakinaXModuleImplem", _infra.makinaXModuleImplem);
         vm.serializeAddress(key, "FlashLoanModule", address(_infra.flashLoanModule));
 
         string memory bridgeEncoderList;
@@ -106,7 +106,7 @@ contract DeployMakinaLite is Base, Script, CreateXUtils {
                     vm.parseJsonAddress(inputJson, string.concat(base, ".cctpV2TokenMessenger"));
                 encoder = address(_deployCctpV2BridgeEncoder(accessManager, accessManager, cctpV2TokenMessenger));
             } else {
-                revert("DeployMakinaLite: unsupported bridgeId");
+                revert("DeployMakinaX: unsupported bridgeId");
             }
 
             _bridgeIds.push(bridgeId);

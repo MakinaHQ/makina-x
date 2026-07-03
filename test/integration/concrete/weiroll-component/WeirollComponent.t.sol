@@ -25,6 +25,6 @@ abstract contract WeirollComponent_Integration_Concrete_Test is Integration_Conc
         allowedInstrMerkleRoot = _generateMerkleData(params);
 
         vm.prank(address(safe));
-        makinaLiteModule.setAllowedInstrRoot(allowedInstrMerkleRoot);
+        makinaXModule.setAllowedInstrRoot(allowedInstrMerkleRoot);
     }
 }

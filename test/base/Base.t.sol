@@ -12,7 +12,7 @@ import {Constants} from "../utils/Constants.sol";
 import {FlashLoanModule} from "src/flash-loans/FlashLoanModule.sol";
 import {IRCodeReader} from "../utils/IRCodeReader.sol";
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
-import {MakinaLiteRegistry} from "../../src/registry/MakinaLiteRegistry.sol";
+import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
 import {MockMorpho} from "../mocks/MockMorpho.sol";
 import {MockSafe} from "../mocks/MockSafe.sol";
 
@@ -33,9 +33,9 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
 
     address internal weirollVM;
 
-    MakinaLiteRegistry internal registry;
+    MakinaXRegistry internal registry;
     ModuleFactory internal moduleFactory;
-    address internal makinaLiteModuleImplem;
+    address internal makinaXModuleImplem;
     FlashLoanModule internal flashLoanModule;
 
     function setUp() public virtual {
@@ -51,7 +51,7 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
 
         safe = new MockSafe();
 
-        MakinaLiteInfra memory makinaLiteInfra = deployMakinaLiteInfra(
+        MakinaXInfra memory makinaXInfra = deployMakinaXInfra(
             address(accessManager),
             weirollVM,
             FlashLoanProviders({morpho: address(morpho)}),
@@ -59,12 +59,12 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
             DEFAULT_SWAP_FEE_RATE,
             false
         );
-        registry = makinaLiteInfra.registry;
-        moduleFactory = makinaLiteInfra.moduleFactory;
-        makinaLiteModuleImplem = makinaLiteInfra.makinaLiteModuleImplem;
-        flashLoanModule = makinaLiteInfra.flashLoanModule;
+        registry = makinaXInfra.registry;
+        moduleFactory = makinaXInfra.moduleFactory;
+        makinaXModuleImplem = makinaXInfra.makinaXModuleImplem;
+        flashLoanModule = makinaXInfra.flashLoanModule;
 
-        setupMakinaLiteRegistry(makinaLiteInfra, dao);
+        setupMakinaXRegistry(makinaXInfra, dao);
 
         setupAccessManagerRoles();
     }

@@ -15,7 +15,7 @@ contract RequestFlashLoan_Integration_Concrete_Test is Integration_Concrete_Test
         vm.expectRevert(Errors.InvalidFlashLoanTaker.selector);
         flashLoanModule.requestFlashLoan(request);
 
-        request.taker = address(makinaLiteModule);
+        request.taker = address(makinaXModule);
 
         vm.expectRevert(Errors.InvalidFlashLoanTaker.selector);
         flashLoanModule.requestFlashLoan(request);
@@ -25,7 +25,7 @@ contract RequestFlashLoan_Integration_Concrete_Test is Integration_Concrete_Test
         IWeirollComponent.Instruction memory instruction;
 
         IFlashLoanModule.FlashLoanRequest memory request = IFlashLoanModule.FlashLoanRequest({
-            taker: address(makinaLiteModule),
+            taker: address(makinaXModule),
             provider: IFlashLoanModule.FlashLoanProvider(0),
             instruction: instruction,
             token: address(0),
@@ -43,7 +43,7 @@ contract RequestFlashLoan_Integration_Concrete_Test is Integration_Concrete_Test
         uint256 amount = 3e18;
 
         IFlashLoanModule.FlashLoanRequest memory request = IFlashLoanModule.FlashLoanRequest({
-            taker: address(makinaLiteModule),
+            taker: address(makinaXModule),
             provider: IFlashLoanModule.FlashLoanProvider.MORPHO,
             instruction: instruction,
             token: token,
@@ -53,7 +53,7 @@ contract RequestFlashLoan_Integration_Concrete_Test is Integration_Concrete_Test
         morpho.setDummyMode(true);
 
         vm.expectEmit(false, false, false, true, address(morpho));
-        emit MockMorpho.FlashLoan(token, amount, abi.encode(token, address(makinaLiteModule), instruction));
+        emit MockMorpho.FlashLoan(token, amount, abi.encode(token, address(makinaXModule), instruction));
 
         vm.prank(address(safe));
         flashLoanModule.requestFlashLoan(request);

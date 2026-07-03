@@ -8,7 +8,7 @@ import {
 import {IBridgeComponent} from "../interfaces/IBridgeComponent.sol";
 import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
 import {ILayerZeroV2BridgeEncoder} from "../interfaces/ILayerZeroV2BridgeEncoder.sol";
-import {IMakinaLiteGovernable} from "../interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "../interfaces/IMakinaXGovernable.sol";
 import {IOFT} from "../interfaces/IOFT.sol";
 import {Errors} from "../libraries/Errors.sol";
 
@@ -57,8 +57,7 @@ contract LayerZeroV2BridgeEncoder layout at erc7201("makina.storage.LayerZeroV2B
 
         address caller = msg.sender;
         if (
-            IMakinaLiteGovernable(caller).operatingMode() != IMakinaLiteGovernable.OperatingMode.OPEN
-                && !isOftRegistered[oft]
+            IMakinaXGovernable(caller).operatingMode() != IMakinaXGovernable.OperatingMode.OPEN && !isOftRegistered[oft]
         ) {
             revert Errors.OftNotRegistered();
         }

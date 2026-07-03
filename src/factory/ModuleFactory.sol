@@ -7,14 +7,14 @@ import {
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {Errors} from "../libraries/Errors.sol";
-import {IMakinaLiteModule} from "../interfaces/IMakinaLiteModule.sol";
-import {IMakinaLiteRegistry} from "../interfaces/IMakinaLiteRegistry.sol";
-import {MakinaLiteContext} from "../utils/MakinaLiteContext.sol";
+import {IMakinaXModule} from "../interfaces/IMakinaXModule.sol";
+import {IMakinaXRegistry} from "../interfaces/IMakinaXRegistry.sol";
+import {MakinaXContext} from "../utils/MakinaXContext.sol";
 import {IModuleFactory} from "../interfaces/IModuleFactory.sol";
 
 contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
     is
-    MakinaLiteContext,
+    MakinaXContext,
     AccessManagedUpgradeable,
     IModuleFactory
 {
@@ -22,7 +22,7 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
     uint256 private constant MAX_FEE_RATE = 1e18;
 
     /// @inheritdoc IModuleFactory
-    mapping(address module => bool isModule) public isMakinaLiteModule;
+    mapping(address module => bool isModule) public isMakinaXModule;
 
     /// @inheritdoc IModuleFactory
     address public defaultProvider;
@@ -33,7 +33,7 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
     /// @inheritdoc IModuleFactory
     bool public freeDeployment;
 
-    constructor(address _registry) MakinaLiteContext(_registry) {
+    constructor(address _registry) MakinaXContext(_registry) {
         _disableInitializers();
     }
 
@@ -52,8 +52,8 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
 
     /// @inheritdoc IModuleFactory
     function createModule(
-        IMakinaLiteModule.MakinaLiteModuleInitParams calldata params,
-        IMakinaLiteModule.MakinaLiteModuleServiceParams calldata serviceParams,
+        IMakinaXModule.MakinaXModuleInitParams calldata params,
+        IMakinaXModule.MakinaXModuleServiceParams calldata serviceParams,
         bytes32 salt,
         bytes32 referralKey
     ) external restricted returns (address) {
@@ -65,11 +65,10 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
     }
 
     /// @inheritdoc IModuleFactory
-    function createModuleFree(
-        IMakinaLiteModule.MakinaLiteModuleInitParams calldata params,
-        bytes32 salt,
-        bytes32 referralKey
-    ) external returns (address) {
+    function createModuleFree(IMakinaXModule.MakinaXModuleInitParams calldata params, bytes32 salt, bytes32 referralKey)
+        external
+        returns (address)
+    {
         if (!freeDeployment) {
             revert Errors.FreeDeploymentDisabled();
         }
@@ -78,7 +77,7 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
 
         return _createModule(
             params,
-            IMakinaLiteModule.MakinaLiteModuleServiceParams({
+            IMakinaXModule.MakinaXModuleServiceParams({
                 initialProvider: defaultProvider, initialSwapFeeRate: defaultSwapFeeRate
             }),
             namespacedSalt,
@@ -101,21 +100,21 @@ contract ModuleFactory layout at erc7201("makina.storage.ModuleFactory")
         _setFreeDeployment(enabled);
     }
 
-    /// @dev Internal logic to deploy and initialize a new MakinaLiteModule clone.
+    /// @dev Internal logic to deploy and initialize a new MakinaXModule clone.
     function _createModule(
-        IMakinaLiteModule.MakinaLiteModuleInitParams calldata params,
-        IMakinaLiteModule.MakinaLiteModuleServiceParams memory serviceParams,
+        IMakinaXModule.MakinaXModuleInitParams calldata params,
+        IMakinaXModule.MakinaXModuleServiceParams memory serviceParams,
         bytes32 salt,
         bytes32 referralKey
     ) private returns (address) {
-        address implementation = IMakinaLiteRegistry(registry).moduleImplementation();
+        address implementation = IMakinaXRegistry(registry).moduleImplementation();
 
         address module = Clones.cloneDeterministic(implementation, salt);
-        IMakinaLiteModule(module).initialize(params, serviceParams);
+        IMakinaXModule(module).initialize(params, serviceParams);
 
-        emit MakinaLiteModuleCreated(module, implementation, referralKey);
+        emit MakinaXModuleCreated(module, implementation, referralKey);
 
-        isMakinaLiteModule[module] = true;
+        isMakinaXModule[module] = true;
 
         return module;
     }

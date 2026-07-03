@@ -5,12 +5,12 @@ import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
 import {FlashLoanModule} from "../../src/flash-loans/FlashLoanModule.sol";
-import {MakinaLiteRegistry} from "../../src/registry/MakinaLiteRegistry.sol";
+import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 
 import {Base} from "../../test/base/Base.sol";
 
-contract SetupMakinaLiteAM is Base, Script {
+contract SetupMakinaXAM is Base, Script {
     using stdJson for string;
 
     string public deploymentInputJson;
@@ -25,12 +25,12 @@ contract SetupMakinaLiteAM is Base, Script {
         string memory basePath = string.concat(vm.projectRoot(), "/script/deployments/");
 
         // load deployment input params
-        string memory deploymentInputPath = string.concat(basePath, "inputs/makina-lite-infra/");
+        string memory deploymentInputPath = string.concat(basePath, "inputs/makina-x-infra/");
         deploymentInputPath = string.concat(deploymentInputPath, deploymentInputFilename);
         deploymentInputJson = vm.readFile(deploymentInputPath);
 
         // load deployment output params
-        string memory deploymentOutputPath = string.concat(basePath, "outputs/makina-lite-infra/");
+        string memory deploymentOutputPath = string.concat(basePath, "outputs/makina-x-infra/");
         deploymentOutputPath = string.concat(deploymentOutputPath, deploymentOutputFilename);
         deploymentOutputJson = vm.readFile(deploymentOutputPath);
     }
@@ -47,10 +47,10 @@ contract SetupMakinaLiteAM is Base, Script {
 
         setupAMFunctionRoles(
             _accessManager,
-            MakinaLiteInfra({
-                registry: MakinaLiteRegistry(vm.parseJsonAddress(deploymentOutputJson, ".MakinaLiteRegistry")),
+            MakinaXInfra({
+                registry: MakinaXRegistry(vm.parseJsonAddress(deploymentOutputJson, ".MakinaXRegistry")),
                 moduleFactory: ModuleFactory(vm.parseJsonAddress(deploymentOutputJson, ".ModuleFactory")),
-                makinaLiteModuleImplem: vm.parseJsonAddress(deploymentOutputJson, ".MakinaLiteModuleImplem"),
+                makinaXModuleImplem: vm.parseJsonAddress(deploymentOutputJson, ".MakinaXModuleImplem"),
                 flashLoanModule: FlashLoanModule(vm.parseJsonAddress(deploymentOutputJson, ".FlashLoanModule"))
             })
         );

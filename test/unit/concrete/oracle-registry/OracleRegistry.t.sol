@@ -19,6 +19,6 @@ abstract contract OracleRegistry_Unit_Concrete_Test is Unit_Concrete_Test {
         baseToken = new MockERC20("Base Token", "BT", 18);
         quoteToken = new MockERC20("Quote Token", "QT", 8);
 
-        oracleRegistry = IOracleRegistry(address(makinaLiteModule));
+        oracleRegistry = IOracleRegistry(address(makinaXModule));
     }
 }

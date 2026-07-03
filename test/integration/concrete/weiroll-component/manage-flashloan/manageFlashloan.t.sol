@@ -20,7 +20,7 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
             LOOP_POS_ID,
             address(flashLoanModule),
-            address(makinaLiteModule),
+            address(makinaXModule),
             address(token),
             flashLoanAmount,
             flMgmtInstruction
@@ -34,20 +34,20 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
             abi.encodeWithSelector(VM.ExecutionFailed.selector, 0, address(flashLoanModule), string("Unknown"))
         );
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
     }
 
     function test_RevertWhen_CallerNotFlashLoanModule() public {
         IWeirollComponent.Instruction memory dummyInstruction;
         vm.expectRevert(Errors.NotFlashLoanModule.selector);
-        makinaLiteModule.manageFlashLoan(dummyInstruction, address(0), 0);
+        makinaXModule.manageFlashLoan(dummyInstruction, address(0), 0);
     }
 
     function test_RevertWhen_DirectCall() public {
         IWeirollComponent.Instruction memory dummyInstruction;
         vm.expectRevert(Errors.DirectManageFlashLoanCall.selector);
         vm.prank(address(flashLoanModule));
-        makinaLiteModule.manageFlashLoan(dummyInstruction, address(0), 0);
+        makinaXModule.manageFlashLoan(dummyInstruction, address(0), 0);
     }
 
     function test_RevertWhen_ProvidedInstructionNonFlashLoanManagementType() public {
@@ -61,7 +61,7 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
             LOOP_POS_ID,
             address(flashLoanModule),
-            address(makinaLiteModule),
+            address(makinaXModule),
             address(token),
             flashLoanAmount,
             flMgmtInstruction
@@ -73,7 +73,7 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
             abi.encodeWithSelector(VM.ExecutionFailed.selector, 0, address(flashLoanModule), string("Unknown"))
         );
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
     }
 
     function test_RevertWhen_ProvidedInstructionsMismatch() public {
@@ -90,7 +90,7 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
             LOOP_POS_ID,
             address(flashLoanModule),
-            address(makinaLiteModule),
+            address(makinaXModule),
             address(token),
             flashLoanAmount,
             flMgmtInstruction
@@ -99,14 +99,14 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
             _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
         vm.expectRevert(errorData);
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // instructions have different isDebt flag
         flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
         flMgmtInstruction.isDebt = true;
         vm.expectRevert(errorData);
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
     }
 
     function test_RevertWhen_InstructionsAreDebt() public {
@@ -117,15 +117,15 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         TransientOverwrite transientOverwrite = new TransientOverwrite();
         bytes32 IS_MANAGED_POSITION_DEBT_SLOT = 0x4e4b4e291d20f6f03003921c4d26de1006021d95c6c1641168790b4e4b3b7200;
         bytes32 MANAGED_POSITION_ID_SLOT = 0xfbb6b868544e1f69cf175881d715d83b048bd3f24bc7e327034891f3b849d600;
-        bytes memory originalCode = address(makinaLiteModule).code;
-        vm.etch(address(makinaLiteModule), address(transientOverwrite).code);
-        TransientOverwrite(address(makinaLiteModule)).set(IS_MANAGED_POSITION_DEBT_SLOT, bytes32(uint256(1)));
-        TransientOverwrite(address(makinaLiteModule)).set(MANAGED_POSITION_ID_SLOT, bytes32(LOOP_POS_ID));
-        vm.etch(address(makinaLiteModule), originalCode);
+        bytes memory originalCode = address(makinaXModule).code;
+        vm.etch(address(makinaXModule), address(transientOverwrite).code);
+        TransientOverwrite(address(makinaXModule)).set(IS_MANAGED_POSITION_DEBT_SLOT, bytes32(uint256(1)));
+        TransientOverwrite(address(makinaXModule)).set(MANAGED_POSITION_ID_SLOT, bytes32(LOOP_POS_ID));
+        vm.etch(address(makinaXModule), originalCode);
 
         vm.expectRevert(Errors.InvalidDebtFlag.selector);
         vm.prank(address(flashLoanModule));
-        makinaLiteModule.manageFlashLoan(flMgmtInstruction, address(0), 0);
+        makinaXModule.manageFlashLoan(flMgmtInstruction, address(0), 0);
     }
 
     function test_ManageFlashLoan() public {
@@ -138,7 +138,7 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
             LOOP_POS_ID,
             address(flashLoanModule),
-            address(makinaLiteModule),
+            address(makinaXModule),
             address(token),
             flashLoanAmount,
             flMgmtInstruction
@@ -147,10 +147,10 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
             _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
 
         vm.prank(operator);
-        makinaLiteModule.managePosition(mgmtInstruction, acctInstruction);
+        makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         assertEq(token.balanceOf(address(morpho)), flashLoanAmount);
-        assertEq(token.balanceOf(address(makinaLiteModule)), 0);
+        assertEq(token.balanceOf(address(makinaXModule)), 0);
         assertEq(token.balanceOf(address(safe)), 0);
     }
 }

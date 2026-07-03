@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-interface IMakinaLiteRegistry {
+interface IMakinaXRegistry {
     event BridgeEncoderChanged(
         uint16 indexed bridgeId, address indexed oldBridgeEncoder, address indexed newBridgeEncoder
     );
@@ -10,10 +10,10 @@ interface IMakinaLiteRegistry {
     event ModuleFactoryChanged(address indexed oldModuleFactory, address indexed newModuleFactory);
     event ModuleImplementationChanged(address indexed oldModuleImplementation, address indexed newModuleImplementation);
 
-    /// @notice Address of the MakinaLiteModule factory.
+    /// @notice Address of the MakinaXModule factory.
     function moduleFactory() external view returns (address);
 
-    /// @notice Address of the MakinaLiteModule implementation.
+    /// @notice Address of the MakinaXModule implementation.
     function moduleImplementation() external view returns (address);
 
     /// @notice Address of the fee collector.
@@ -25,11 +25,11 @@ interface IMakinaLiteRegistry {
     /// @notice Bridge ID => Address of the corresponding bridge encoder.
     function getBridgeEncoder(uint16 bridgeId) external view returns (address);
 
-    /// @notice Sets the address of the MakinaLiteModule factory.
-    /// @param newModuleFactory The address of the new MakinaLiteModule factory.
+    /// @notice Sets the address of the MakinaXModule factory.
+    /// @param newModuleFactory The address of the new MakinaXModule factory.
     function setModuleFactory(address newModuleFactory) external;
 
-    /// @notice Sets the MakinaLiteModule implementation for future deployments.
+    /// @notice Sets the MakinaXModule implementation for future deployments.
     /// @param newImplementation The address of the new implementation contract.
     function setModuleImplementation(address newImplementation) external;
 

@@ -11,17 +11,17 @@ import {IntegrationIds} from "../utils/IntegrationIds.sol";
 import {FlashLoanModule} from "../../src/flash-loans/FlashLoanModule.sol";
 import {LayerZeroV2BridgeEncoder} from "../../src/bridge-encoders/LayerZeroV2BridgeEncoder.sol";
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
-import {MakinaLiteModule} from "../../src/MakinaLiteModule.sol";
-import {MakinaLiteRegistry} from "../../src/registry/MakinaLiteRegistry.sol";
+import {MakinaXModule} from "../../src/MakinaXModule.sol";
+import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
 import {ProxyUtils} from "../utils/ProxyUtils.sol";
 import {Roles} from "../utils/Roles.sol";
 import {SaltDomains} from "../utils/SaltDomains.sol";
 
 abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
-    struct MakinaLiteInfra {
-        MakinaLiteRegistry registry;
+    struct MakinaXInfra {
+        MakinaXRegistry registry;
         ModuleFactory moduleFactory;
-        address makinaLiteModuleImplem;
+        address makinaXModuleImplem;
         FlashLoanModule flashLoanModule;
     }
 
@@ -29,15 +29,15 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         address morpho;
     }
 
-    function deployMakinaLiteInfra(
+    function deployMakinaXInfra(
         address _accessManager,
         address _weirollVM,
         FlashLoanProviders memory flProviders,
         address _defaultProvider,
         uint256 _defaultSwapFeeRate,
         bool _freeDeployment
-    ) internal returns (MakinaLiteInfra memory deployment) {
-        deployment.registry = _deployMakinaLiteRegistry(_accessManager, _accessManager);
+    ) internal returns (MakinaXInfra memory deployment) {
+        deployment.registry = _deployMakinaXRegistry(_accessManager, _accessManager);
         deployment.moduleFactory = _deployModuleFactory(
             _accessManager,
             _accessManager,
@@ -46,18 +46,18 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
             _defaultSwapFeeRate,
             _freeDeployment
         );
-        deployment.makinaLiteModuleImplem = _deployMakinaLiteModuleImplem(address(deployment.registry), _weirollVM);
+        deployment.makinaXModuleImplem = _deployMakinaXModuleImplem(address(deployment.registry), _weirollVM);
         deployment.flashLoanModule = _deployFlashLoanModule(address(deployment.moduleFactory), flProviders);
     }
 
-    function setupMakinaLiteRegistry(MakinaLiteInfra memory deployment, address feeCollector) internal {
+    function setupMakinaXRegistry(MakinaXInfra memory deployment, address feeCollector) internal {
         deployment.registry.setModuleFactory(address(deployment.moduleFactory));
-        deployment.registry.setModuleImplementation(deployment.makinaLiteModuleImplem);
+        deployment.registry.setModuleImplementation(deployment.makinaXModuleImplem);
         deployment.registry.setFeeCollector(feeCollector);
         deployment.registry.setFlashLoanModule(address(deployment.flashLoanModule));
     }
 
-    function setupAMFunctionRoles(address accessManager, MakinaLiteInfra memory deployment) internal {
+    function setupAMFunctionRoles(address accessManager, MakinaXInfra memory deployment) internal {
         // Transparent Proxy Admins
         bytes4[] memory proxyAdminSelectors = new bytes4[](1);
         proxyAdminSelectors[0] = ProxyAdmin.upgradeAndCall.selector;
@@ -71,13 +71,13 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
                 getProxyAdmin(address(deployment.moduleFactory)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
             );
 
-        // MakinaLiteRegistry setters
+        // MakinaXRegistry setters
         bytes4[] memory registrySetterSelectors = new bytes4[](5);
-        registrySetterSelectors[0] = MakinaLiteRegistry.setModuleFactory.selector;
-        registrySetterSelectors[1] = MakinaLiteRegistry.setModuleImplementation.selector;
-        registrySetterSelectors[2] = MakinaLiteRegistry.setFeeCollector.selector;
-        registrySetterSelectors[3] = MakinaLiteRegistry.setFlashLoanModule.selector;
-        registrySetterSelectors[4] = MakinaLiteRegistry.setBridgeEncoder.selector;
+        registrySetterSelectors[0] = MakinaXRegistry.setModuleFactory.selector;
+        registrySetterSelectors[1] = MakinaXRegistry.setModuleImplementation.selector;
+        registrySetterSelectors[2] = MakinaXRegistry.setFeeCollector.selector;
+        registrySetterSelectors[3] = MakinaXRegistry.setFlashLoanModule.selector;
+        registrySetterSelectors[4] = MakinaXRegistry.setBridgeEncoder.selector;
         IAccessManager(accessManager)
             .setTargetFunctionRole(address(deployment.registry), registrySetterSelectors, Roles.INFRA_CONFIG_ROLE);
 
@@ -97,18 +97,18 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
             .setTargetFunctionRole(address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE);
     }
 
-    function _deployMakinaLiteRegistry(address _proxyOwner, address _accessManager)
+    function _deployMakinaXRegistry(address _proxyOwner, address _accessManager)
         internal
-        returns (MakinaLiteRegistry registry)
+        returns (MakinaXRegistry registry)
     {
-        address implem = _deployCode(type(MakinaLiteRegistry).creationCode, 0);
-        return MakinaLiteRegistry(
+        address implem = _deployCode(type(MakinaXRegistry).creationCode, 0);
+        return MakinaXRegistry(
             _deployCode(
                 abi.encodePacked(
                     type(TransparentUpgradeableProxy).creationCode,
-                    abi.encode(implem, _proxyOwner, abi.encodeCall(MakinaLiteRegistry.initialize, (_accessManager)))
+                    abi.encode(implem, _proxyOwner, abi.encodeCall(MakinaXRegistry.initialize, (_accessManager)))
                 ),
-                MAKINA_LITE_REGISTRY_SALT_DOMAIN
+                MAKINA_X_REGISTRY_SALT_DOMAIN
             )
         );
     }
@@ -140,8 +140,8 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         );
     }
 
-    function _deployMakinaLiteModuleImplem(address _registry, address _weirollVM) internal returns (address implem) {
-        return _deployCode(abi.encodePacked(type(MakinaLiteModule).creationCode, abi.encode(_registry, _weirollVM)), 0);
+    function _deployMakinaXModuleImplem(address _registry, address _weirollVM) internal returns (address implem) {
+        return _deployCode(abi.encodePacked(type(MakinaXModule).creationCode, abi.encode(_registry, _weirollVM)), 0);
     }
 
     function _deployFlashLoanModule(address _moduleFactory, FlashLoanProviders memory flProviders)

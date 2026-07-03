@@ -12,7 +12,7 @@ abstract contract SwapComponent_Unit_Concrete_Test is Unit_Concrete_Test {
     function setUp() public virtual override {
         Unit_Concrete_Test.setUp();
 
-        swapComponent = ISwapComponent(address(makinaLiteModule));
+        swapComponent = ISwapComponent(address(makinaXModule));
     }
 }
 

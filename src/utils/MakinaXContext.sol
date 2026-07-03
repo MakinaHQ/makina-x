@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
-import {IMakinaLiteContext} from "../interfaces/IMakinaLiteContext.sol";
+import {IMakinaXContext} from "../interfaces/IMakinaXContext.sol";
 
-abstract contract MakinaLiteContext is IMakinaLiteContext {
-    /// @inheritdoc IMakinaLiteContext
+abstract contract MakinaXContext is IMakinaXContext {
+    /// @inheritdoc IMakinaXContext
     address public immutable override registry;
 
     constructor(address _registry) {

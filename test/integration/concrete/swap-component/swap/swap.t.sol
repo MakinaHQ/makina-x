@@ -6,7 +6,7 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
 import {Errors} from "src/libraries/Errors.sol";
 import {MockERC20} from "test/mocks/MockERC20.sol";
 import {MockDex} from "test/mocks/MockDex.sol";
-import {IMakinaLiteGovernable} from "src/interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "src/interfaces/IMakinaXGovernable.sol";
 import {ISwapComponent} from "src/interfaces/ISwapComponent.sol";
 
 import {Integration_Concrete_Test} from "../../IntegrationConcrete.t.sol";
@@ -32,12 +32,12 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         });
 
         tokenA.scheduleReenter(
-            MockERC20.Type.Before, address(makinaLiteModule), abi.encodeCall(ISwapComponent.swap, (order))
+            MockERC20.Type.Before, address(makinaXModule), abi.encodeCall(ISwapComponent.swap, (order))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -45,31 +45,31 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_CallerNotOperator() public {
         ISwapComponent.SwapOrder memory order;
 
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_InvalidInputToken() public {
@@ -77,7 +77,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.InvalidInputToken.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_TransferFromSafeFailed() public {
@@ -88,7 +88,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.TransferFromSafeFailed.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_InsufficientBalance() public {
@@ -107,7 +107,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
             abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, address(safe), 0, inputAmount)
         );
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_TargetsNotSet() public {
@@ -125,21 +125,21 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.SwapperTargetsNotSet.selector);
         vm.prank(address(operator));
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         vm.prank(address(safe));
-        makinaLiteModule.setSwapperTargets(TEST_SWAPPER_ID, address(1), address(0));
+        makinaXModule.setSwapperTargets(TEST_SWAPPER_ID, address(1), address(0));
         vm.expectRevert(Errors.SwapperTargetsNotSet.selector);
 
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         vm.prank(address(safe));
-        makinaLiteModule.setSwapperTargets(TEST_SWAPPER_ID, address(0), address(1));
+        makinaXModule.setSwapperTargets(TEST_SWAPPER_ID, address(0), address(1));
 
         vm.expectRevert(Errors.SwapperTargetsNotSet.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_SwapperExecutionFails() public {
@@ -159,7 +159,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.SwapFailed.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_RevertGiven_AmountOutTooLow() public {
@@ -179,12 +179,12 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.AmountOutTooLow.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function test_Swap_WithoutFee() public {
         vm.prank(dao);
-        makinaLiteModule.setSwapFeeRate(0);
+        makinaXModule.setSwapFeeRate(0);
 
         uint256 inputAmount = 1e18;
         deal(address(tokenA), address(safe), inputAmount, true);
@@ -200,10 +200,10 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
             minOutputAmount: 0
         });
 
-        vm.expectEmit(true, true, true, true, address(makinaLiteModule));
+        vm.expectEmit(true, true, true, true, address(makinaXModule));
         emit ISwapComponent.Swap(TEST_SWAPPER_ID, address(tokenA), address(tokenB), inputAmount, previewSwap);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         assertEq(tokenB.balanceOf(address(safe)), previewSwap);
         assertEq(tokenB.balanceOf(dao), 0);
@@ -225,10 +225,10 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
             minOutputAmount: 0
         });
 
-        vm.expectEmit(true, true, true, true, address(makinaLiteModule));
+        vm.expectEmit(true, true, true, true, address(makinaXModule));
         emit ISwapComponent.Swap(TEST_SWAPPER_ID, address(tokenA), address(tokenB), inputAmount, previewSwap);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         assertEq(tokenB.balanceOf(address(safe)), previewSwap - expectedFee);
         assertEq(tokenB.balanceOf(dao), expectedFee);
@@ -243,11 +243,11 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
     }
 
     function test_RevertGiven_OngoingCooldown_WhileInFencedMode() public {
-        _test_RevertGiven_OngoingCooldown(IMakinaLiteGovernable.OperatingMode.FENCED);
+        _test_RevertGiven_OngoingCooldown(IMakinaXGovernable.OperatingMode.FENCED);
     }
 
     function test_RevertGiven_OngoingCooldown_WhileInWalledMode() public {
-        _test_RevertGiven_OngoingCooldown(IMakinaLiteGovernable.OperatingMode.WALLED);
+        _test_RevertGiven_OngoingCooldown(IMakinaXGovernable.OperatingMode.WALLED);
     }
 
     function test_RevertGiven_MaxValueLossExceeded_WhileInFencedMode() public whileInFencedMode {
@@ -285,25 +285,25 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
         });
 
         vm.prank(address(safe));
-        makinaLiteModule.clearFeedRoute(address(tokenA));
+        makinaXModule.clearFeedRoute(address(tokenA));
 
         // input token not registered
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenA)));
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         vm.startPrank(address(safe));
-        makinaLiteModule.setFeedRoute(address(tokenA), address(aPriceFeed1), DEFAULT_PF_STALE_THRSHLD, address(0), 0);
-        makinaLiteModule.clearFeedRoute(address(tokenB));
+        makinaXModule.setFeedRoute(address(tokenA), address(aPriceFeed1), DEFAULT_PF_STALE_THRSHLD, address(0), 0);
+        makinaXModule.clearFeedRoute(address(tokenB));
         vm.stopPrank();
 
         // output token not registered
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenB)));
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
-    function _test_RevertGiven_OngoingCooldown(IMakinaLiteGovernable.OperatingMode mode) internal {
+    function _test_RevertGiven_OngoingCooldown(IMakinaXGovernable.OperatingMode mode) internal {
         uint256 inputAmount = 1e18;
         deal(address(tokenA), address(safe), 3 * inputAmount, true);
 
@@ -318,20 +318,20 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         // execute a swap while in open mode
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         // set non-open operating mode
         vm.prank(address(safe));
-        makinaLiteModule.setOperatingMode(mode);
+        makinaXModule.setOperatingMode(mode);
 
         // execute swap to trigger cooldown
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         // try executing again while cooldown is ongoing
         vm.expectRevert(Errors.OngoingCooldown.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function _test_RevertGiven_MaxValueLossExceeded() internal {
@@ -351,7 +351,7 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
 
         vm.expectRevert(Errors.MaxValueLossExceeded.selector);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
     }
 
     function _test_Swap_WhileInNonOpenMode() internal {
@@ -372,10 +372,10 @@ contract Swap_Integration_Concrete_Test is Integration_Concrete_Test {
             minOutputAmount: 0
         });
 
-        vm.expectEmit(true, true, true, true, address(makinaLiteModule));
+        vm.expectEmit(true, true, true, true, address(makinaXModule));
         emit ISwapComponent.Swap(TEST_SWAPPER_ID, address(tokenA), address(tokenB), inputAmount, previewSwap);
         vm.prank(operator);
-        makinaLiteModule.swap(order);
+        makinaXModule.swap(order);
 
         assertEq(tokenB.balanceOf(address(safe)), previewSwap - expectedFee);
         assertEq(tokenB.balanceOf(dao), expectedFee);

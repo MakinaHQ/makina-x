@@ -10,7 +10,7 @@ import {IAcrossV4BridgeEncoder} from "../interfaces/IAcrossV4BridgeEncoder.sol";
 import {IAcrossV4SpokePool} from "../interfaces/IAcrossV4SpokePool.sol";
 import {IBridgeComponent} from "../interfaces/IBridgeComponent.sol";
 import {IBridgeEncoder} from "../interfaces/IBridgeEncoder.sol";
-import {IMakinaLiteGovernable} from "../interfaces/IMakinaLiteGovernable.sol";
+import {IMakinaXGovernable} from "../interfaces/IMakinaXGovernable.sol";
 import {Errors} from "../libraries/Errors.sol";
 
 contract AcrossV4BridgeEncoder layout at erc7201("makina.storage.AcrossV4BridgeEncoder")
@@ -55,13 +55,13 @@ contract AcrossV4BridgeEncoder layout at erc7201("makina.storage.AcrossV4BridgeE
 
         address caller = msg.sender;
         if (
-            IMakinaLiteGovernable(caller).operatingMode() != IMakinaLiteGovernable.OperatingMode.OPEN
+            IMakinaXGovernable(caller).operatingMode() != IMakinaXGovernable.OperatingMode.OPEN
                 && !isRouteRegistered(order.inputToken, order.destinationChainId, outputToken)
         ) {
             revert Errors.RouteNotRegistered();
         }
 
-        address refundAddress = IMakinaLiteGovernable(caller).safe();
+        address refundAddress = IMakinaXGovernable(caller).safe();
 
         bytes memory cd = abi.encodeCall(
             IAcrossV4SpokePool.depositV3Now,

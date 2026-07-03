@@ -24,13 +24,13 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         tokenA.scheduleReenter(
             MockERC20.Type.Before,
-            address(makinaLiteModule),
+            address(makinaXModule),
             abi.encodeCall(IWeirollComponent.harvest, (instruction, swapOrders))
         );
 
         vm.expectRevert();
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertWhen_NotOperational() public {
@@ -39,24 +39,24 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         // module paused
         vm.prank(guardian);
-        makinaLiteModule.pause();
+        makinaXModule.pause();
 
         vm.expectRevert(Errors.Paused.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         // module suspended + paused
         vm.prank(dao);
-        makinaLiteModule.suspend();
+        makinaXModule.suspend();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         // module suspended
         vm.prank(guardian);
-        makinaLiteModule.unpause();
+        makinaXModule.unpause();
 
         vm.expectRevert(Errors.Suspended.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertWhen_CallerNotOperator() public {
@@ -64,7 +64,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         ISwapComponent.SwapOrder[] memory swapOrders;
 
         vm.expectRevert(Errors.UnauthorizedCaller.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertWhen_InstructionNonHarvestingType() public {
@@ -73,7 +73,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         ISwapComponent.SwapOrder[] memory swapOrders;
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertWhen_ProofInvalid() public {
@@ -86,35 +86,35 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         // use wrong reward contract
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenB), harvestAmount);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong commands
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
         delete instruction.commands[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong state
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
         delete instruction.state[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong bitmap
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
         instruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         vm.stopPrank();
 
         // use new root
         vm.prank(address(safe));
-        makinaLiteModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
+        makinaXModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertGiven_SwapperExecutionFails() public {
@@ -137,7 +137,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.SwapFailed.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_RevertGiven_SwapAmountOutTooLow() public {
@@ -160,7 +160,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.AmountOutTooLow.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function test_Harvest_NoSwap() public {
@@ -169,7 +169,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
     function test_Harvest_WithSwap_WithoutFee() public {
         vm.prank(dao);
-        makinaLiteModule.setSwapFeeRate(0);
+        makinaXModule.setSwapFeeRate(0);
 
         uint256 harvestAmount = 1e18;
         uint256 previewOutputAmount = dex.previewSwap(address(tokenA), address(tokenB), harvestAmount);
@@ -187,7 +187,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         });
 
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
         assertEq(tokenA.balanceOf(address(safe)), 0);
         assertEq(tokenB.balanceOf(address(safe)), previewOutputAmount);
     }
@@ -272,22 +272,22 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         });
 
         vm.prank(address(safe));
-        makinaLiteModule.clearFeedRoute(address(tokenA));
+        makinaXModule.clearFeedRoute(address(tokenA));
 
         // input token not registered
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenA)));
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
 
         vm.startPrank(address(safe));
-        makinaLiteModule.setFeedRoute(address(tokenA), address(aPriceFeed1), DEFAULT_PF_STALE_THRSHLD, address(0), 0);
-        makinaLiteModule.clearFeedRoute(address(tokenB));
+        makinaXModule.setFeedRoute(address(tokenA), address(aPriceFeed1), DEFAULT_PF_STALE_THRSHLD, address(0), 0);
+        makinaXModule.clearFeedRoute(address(tokenB));
         vm.stopPrank();
 
         // output token not registered
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenB)));
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function _test_RevertGiven_MaxValueLossExceeded_WhileNotInOpenMode() internal {
@@ -310,7 +310,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.MaxValueLossExceeded.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function _test_RevertGiven_SwapperExecutionFails_WhileNotInOpenMode() internal {
@@ -333,7 +333,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.SwapFailed.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function _test_RevertGiven_SwapAmountOutTooLow_WhileNotInOpenMode() internal {
@@ -356,7 +356,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.AmountOutTooLow.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function _test_RevertWhen_MoreThanOneSwap_WhileNotInOpenMode() internal {
@@ -387,7 +387,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         vm.expectRevert(Errors.OngoingCooldown.selector);
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
     }
 
     function _test_Harvest_NoSwap() internal {
@@ -397,7 +397,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](0);
 
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
         assertEq(tokenA.balanceOf(address(safe)), harvestAmount);
     }
 
@@ -419,7 +419,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         });
 
         vm.prank(operator);
-        makinaLiteModule.harvest(instruction, swapOrders);
+        makinaXModule.harvest(instruction, swapOrders);
         assertEq(tokenA.balanceOf(address(safe)), 0);
         assertEq(tokenB.balanceOf(address(safe)), previewSwap - expectedFee);
     }
