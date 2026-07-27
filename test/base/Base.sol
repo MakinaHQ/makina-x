@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
@@ -29,6 +30,11 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         address morpho;
     }
 
+    struct Call {
+        address target;
+        bytes data;
+    }
+
     function deployMakinaXInfra(
         address _accessManager,
         address _weirollVM,
@@ -51,25 +57,39 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
     }
 
     function setupMakinaXRegistry(MakinaXInfra memory deployment, address feeCollector) internal {
-        deployment.registry.setModuleFactory(address(deployment.moduleFactory));
-        deployment.registry.setModuleImplementation(deployment.makinaXModuleImplem);
-        deployment.registry.setFeeCollector(feeCollector);
-        deployment.registry.setFlashLoanModule(address(deployment.flashLoanModule));
+        _executeCalls(registrySetupCalls(deployment, feeCollector));
     }
 
     function setupAMFunctionRoles(address accessManager, MakinaXInfra memory deployment) internal {
+        _executeCalls(amFunctionRoleCalls(accessManager, deployment));
+    }
+
+    /// @dev Returns the calls that configure the MakinaXRegistry component addresses.
+    function registrySetupCalls(MakinaXInfra memory deployment, address feeCollector)
+        internal
+        pure
+        returns (Call[] memory calls)
+    {
+        address registry = address(deployment.registry);
+
+        calls = new Call[](4);
+        calls[0] = Call(registry, abi.encodeCall(MakinaXRegistry.setModuleFactory, (address(deployment.moduleFactory))));
+        calls[1] =
+            Call(registry, abi.encodeCall(MakinaXRegistry.setModuleImplementation, (deployment.makinaXModuleImplem)));
+        calls[2] = Call(registry, abi.encodeCall(MakinaXRegistry.setFeeCollector, (feeCollector)));
+        calls[3] =
+            Call(registry, abi.encodeCall(MakinaXRegistry.setFlashLoanModule, (address(deployment.flashLoanModule))));
+    }
+
+    /// @dev Returns the AccessManager calls that assign function roles for the MakinaX infrastructure.
+    function amFunctionRoleCalls(address accessManager, MakinaXInfra memory deployment)
+        internal
+        view
+        returns (Call[] memory calls)
+    {
         // Transparent Proxy Admins
         bytes4[] memory proxyAdminSelectors = new bytes4[](1);
         proxyAdminSelectors[0] = ProxyAdmin.upgradeAndCall.selector;
-
-        IAccessManager(accessManager)
-            .setTargetFunctionRole(
-                getProxyAdmin(address(deployment.registry)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
-            );
-        IAccessManager(accessManager)
-            .setTargetFunctionRole(
-                getProxyAdmin(address(deployment.moduleFactory)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
-            );
 
         // MakinaXRegistry setters
         bytes4[] memory registrySetterSelectors = new bytes4[](5);
@@ -78,23 +98,59 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         registrySetterSelectors[2] = MakinaXRegistry.setFeeCollector.selector;
         registrySetterSelectors[3] = MakinaXRegistry.setFlashLoanModule.selector;
         registrySetterSelectors[4] = MakinaXRegistry.setBridgeEncoder.selector;
-        IAccessManager(accessManager)
-            .setTargetFunctionRole(address(deployment.registry), registrySetterSelectors, Roles.INFRA_CONFIG_ROLE);
 
+        // ModuleFactory deployment selector
         bytes4[] memory factoryDeploySelectors = new bytes4[](1);
         factoryDeploySelectors[0] = ModuleFactory.createModule.selector;
-        IAccessManager(accessManager)
-            .setTargetFunctionRole(
-                address(deployment.moduleFactory), factoryDeploySelectors, Roles.STRATEGY_DEPLOYMENT_ROLE
-            );
 
         // ModuleFactory config setters
         bytes4[] memory factoryConfigSelectors = new bytes4[](3);
         factoryConfigSelectors[0] = ModuleFactory.setDefaultProvider.selector;
         factoryConfigSelectors[1] = ModuleFactory.setDefaultSwapFeeRate.selector;
         factoryConfigSelectors[2] = ModuleFactory.setFreeDeployment.selector;
-        IAccessManager(accessManager)
-            .setTargetFunctionRole(address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE);
+
+        calls = new Call[](5);
+        calls[0] = Call(
+            accessManager,
+            abi.encodeCall(
+                IAccessManager.setTargetFunctionRole,
+                (getProxyAdmin(address(deployment.registry)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
+            )
+        );
+        calls[1] = Call(
+            accessManager,
+            abi.encodeCall(
+                IAccessManager.setTargetFunctionRole,
+                (getProxyAdmin(address(deployment.moduleFactory)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
+            )
+        );
+        calls[2] = Call(
+            accessManager,
+            abi.encodeCall(
+                IAccessManager.setTargetFunctionRole,
+                (address(deployment.registry), registrySetterSelectors, Roles.INFRA_CONFIG_ROLE)
+            )
+        );
+        calls[3] = Call(
+            accessManager,
+            abi.encodeCall(
+                IAccessManager.setTargetFunctionRole,
+                (address(deployment.moduleFactory), factoryDeploySelectors, Roles.STRATEGY_DEPLOYMENT_ROLE)
+            )
+        );
+        calls[4] = Call(
+            accessManager,
+            abi.encodeCall(
+                IAccessManager.setTargetFunctionRole,
+                (address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE)
+            )
+        );
+    }
+
+    function _executeCalls(Call[] memory calls) internal {
+        for (uint256 i; i < calls.length; ++i) {
+            Address.functionCall(calls[i].target, calls[i].data);
+        }
     }
 
     function _deployMakinaXRegistry(address _proxyOwner, address _accessManager)
