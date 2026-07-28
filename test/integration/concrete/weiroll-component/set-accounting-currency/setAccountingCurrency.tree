@@ -2,7 +2,8 @@ setAccountingCurrency.t.sol
 ├── when caller is not the module's safe
 │  └── it should revert with UnauthorizedCaller
 └── when caller is the module's safe
-   ├── given price data is not registered for provided currency
+   ├── given the provided currency is not the default currency and price data is not registered for it
    │  └── it should revert with PriceFeedRouteNotRegistered
-   └── given price data is registered for provided currency
-      └── it should set the accounting currency in the contract storage
+   └── given the provided currency is the default currency or price data is registered for it
+      ├── it should update the accounting currency in the contract storage
+      └── it should emit an AccountingCurrencyChanged event

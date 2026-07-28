@@ -55,4 +55,16 @@ contract SetAccountingCurrency_Integration_Concrete_Test is WeirollComponent_Int
 
         assertEq(makinaXModule.accountingCurrency(), address(tokenA));
     }
+
+    function test_SetAccountingCurrency_DefaultCurrency() public {
+        vm.prank(address(safe));
+        makinaXModule.setAccountingCurrency(address(tokenA));
+
+        vm.expectEmit(true, true, false, false, address(makinaXModule));
+        emit IWeirollComponent.AccountingCurrencyChanged(address(tokenA), address(0));
+        vm.prank(address(safe));
+        makinaXModule.setAccountingCurrency(address(0));
+
+        assertEq(makinaXModule.accountingCurrency(), address(0));
+    }
 }
