@@ -4,6 +4,7 @@ pragma solidity 0.8.35;
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
+import {IERC6909} from "@openzeppelin/contracts/interfaces/IERC6909.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -285,6 +286,12 @@ contract MakinaXModule is
     /// @inheritdoc IMakinaXModule
     function sweepERC721(address token, uint256 tokenId) external nonReentrant onlySafe {
         IERC721(token).transferFrom(address(this), safe, tokenId);
+    }
+
+    /// @inheritdoc IMakinaXModule
+    function sweepERC6909(address token, uint256 id) external nonReentrant onlySafe {
+        uint256 bal = IERC6909(token).balanceOf(address(this), id);
+        IERC6909(token).transfer(safe, id, bal);
     }
 
     /// @inheritdoc IMakinaXModule
