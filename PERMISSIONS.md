@@ -28,6 +28,7 @@ The Safe is the ultimate owner of the module and all managed assets. It has excl
 - Can set the cooldown duration for bridge transfers.
 - Can add and remove whitelisted bridge transfer recipients.
 - Can sweep ERC20 tokens held by the module back to the Safe.
+- Can sweep ERC721 tokens held by the module back to the Safe.
 - Can sweep native tokens held by the module back to the Safe.
 
 ### Provider

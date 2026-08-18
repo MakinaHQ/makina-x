@@ -54,6 +54,11 @@ interface IMakinaXModule is
     /// @param token The address of the ERC20 token to sweep.
     function sweepERC20(address token) external;
 
+    /// @notice Sweeps a given ERC721 token to the Safe.
+    /// @param token The address of the ERC721 collection to sweep from.
+    /// @param tokenId The id of the ERC721 token to sweep.
+    function sweepERC721(address token, uint256 tokenId) external;
+
     /// @notice Sweeps the entire native currency balance (e.g. ETH) to the Safe.
     function sweepNative() external;
 }
