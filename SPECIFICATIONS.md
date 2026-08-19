@@ -18,7 +18,7 @@ Each module is deployed as a minimal clone via the `ModuleFactory` and initializ
 
 #### Fund Custody
 
-The module isn't meant to hold tokens between operations: swaps, bridges, and flash loans pull inputs from the Safe and forward outputs back within the same call, while Weiroll instructions execute directly in the Safe's context. `sweepERC20`, `sweepERC721` and `sweepERC6909` provide a recovery hatch for tokens that lands there by mistake.
+The module isn't meant to hold tokens between operations: swaps, bridges, and flash loans pull inputs from the Safe and forward outputs back within the same call, while Weiroll instructions execute directly in the Safe's context. `sweepERC20`, `sweepERC721` and `sweepERC6909` provide a recovery hatch for tokens that land in the module by mistake.
 
 #### Operating Mode
 
