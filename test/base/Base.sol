@@ -104,14 +104,14 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         registrySetterSelectors[4] = MakinaXRegistry.setBridgeEncoder.selector;
 
         // ModuleFactory deployment selector
-        bytes4[] memory factoryDeploySelectors = new bytes4[](1);
+        bytes4[] memory factoryDeploySelectors = new bytes4[](2);
         factoryDeploySelectors[0] = ModuleFactory.createModule.selector;
+        factoryDeploySelectors[1] = ModuleFactory.setFreeDeployment.selector;
 
         // ModuleFactory config setters
-        bytes4[] memory factoryConfigSelectors = new bytes4[](3);
+        bytes4[] memory factoryConfigSelectors = new bytes4[](2);
         factoryConfigSelectors[0] = ModuleFactory.setDefaultProvider.selector;
         factoryConfigSelectors[1] = ModuleFactory.setDefaultSwapFeeRate.selector;
-        factoryConfigSelectors[2] = ModuleFactory.setFreeDeployment.selector;
 
         calls = new Call[](5);
         calls[0] = Call(
