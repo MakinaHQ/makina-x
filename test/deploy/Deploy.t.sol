@@ -127,7 +127,8 @@ contract Deploy_Scripts_Test is Base_Test {
         setupMakinaXAM = new SetupMakinaXAM();
         setupMakinaXAM.run();
 
-        (MakinaXInfra memory infra,,) = deployMakinaX.deployment();
+        (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
+            deployMakinaX.deployment();
 
         address accessManager = vm.parseJsonAddress(deployMakinaX.inputJson(), ".accessManager");
 
@@ -155,6 +156,46 @@ contract Deploy_Scripts_Test is Base_Test {
             assertEq(
                 IAccessManager(accessManager)
                     .getTargetFunctionRole(address(infra.registry), registrySetterSelectors[i]),
+                Roles.INFRA_CONFIG_ROLE
+            );
+        }
+
+        // Every deployed bridge encoder is guarded as well
+        assertEq(bridgeIds.length, _bridgesTargetsLength(deployMakinaX.inputJson()));
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            _assertBridgeEncoderAMRoles(accessManager, bridgeIds[i], bridgeEncoders[i]);
+        }
+    }
+
+    function _assertBridgeEncoderAMRoles(address accessManager, uint16 bridgeId, address encoder) internal view {
+        // The encoder's transparent proxy admin upgradeAndCall is guarded by INFRA_UPGRADE_ROLE
+        assertEq(
+            IAccessManager(accessManager)
+                .getTargetFunctionRole(getProxyAdmin(encoder), ProxyAdmin.upgradeAndCall.selector),
+            Roles.INFRA_UPGRADE_ROLE
+        );
+
+        bytes4[] memory encoderSetterSelectors;
+        if (bridgeId == ACROSS_V4_BRIDGE_ID) {
+            encoderSetterSelectors = new bytes4[](2);
+            encoderSetterSelectors[0] = AcrossV4BridgeEncoder.addRoute.selector;
+            encoderSetterSelectors[1] = AcrossV4BridgeEncoder.removeRoute.selector;
+        } else if (bridgeId == LAYER_ZERO_V2_BRIDGE_ID) {
+            encoderSetterSelectors = new bytes4[](3);
+            encoderSetterSelectors[0] = LayerZeroV2BridgeEncoder.setLzEndpointId.selector;
+            encoderSetterSelectors[1] = LayerZeroV2BridgeEncoder.addOft.selector;
+            encoderSetterSelectors[2] = LayerZeroV2BridgeEncoder.removeOft.selector;
+        } else if (bridgeId == CCTP_V2_BRIDGE_ID) {
+            encoderSetterSelectors = new bytes4[](1);
+            encoderSetterSelectors[0] = CctpV2BridgeEncoder.setCctpDomain.selector;
+        } else {
+            revert("unsupported bridgeId in test fixture");
+        }
+
+        // The encoder setters are guarded by INFRA_CONFIG_ROLE
+        for (uint256 i; i < encoderSetterSelectors.length; ++i) {
+            assertEq(
+                IAccessManager(accessManager).getTargetFunctionRole(encoder, encoderSetterSelectors[i]),
                 Roles.INFRA_CONFIG_ROLE
             );
         }

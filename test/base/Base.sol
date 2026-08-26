@@ -92,8 +92,7 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         returns (Call[] memory calls)
     {
         // Transparent Proxy Admins
-        bytes4[] memory proxyAdminSelectors = new bytes4[](1);
-        proxyAdminSelectors[0] = ProxyAdmin.upgradeAndCall.selector;
+        bytes4[] memory proxyAdminSelectors = _proxyAdminAMSelectors();
 
         // MakinaXRegistry setters
         bytes4[] memory registrySetterSelectors = new bytes4[](5);
@@ -149,6 +148,58 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
                 (address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE)
             )
         );
+    }
+
+    /// @dev Returns the AccessManager calls that assign function roles for the given deployed bridge encoders.
+    function _bridgeEncoderAMFunctionRoleCalls(
+        address accessManager,
+        uint16[] memory bridgeIds,
+        address[] memory encoders
+    ) internal view returns (Call[] memory calls) {
+        require(bridgeIds.length == encoders.length, "bridge encoders length mismatch");
+
+        bytes4[] memory proxyAdminSelectors = _proxyAdminAMSelectors();
+
+        calls = new Call[](2 * bridgeIds.length);
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            calls[2 * i] = Call(
+                accessManager,
+                abi.encodeCall(
+                    IAccessManager.setTargetFunctionRole,
+                    (getProxyAdmin(encoders[i]), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
+                )
+            );
+            calls[2 * i + 1] = Call(
+                accessManager,
+                abi.encodeCall(
+                    IAccessManager.setTargetFunctionRole,
+                    (encoders[i], _bridgeEncoderAMSelectors(bridgeIds[i]), Roles.INFRA_CONFIG_ROLE)
+                )
+            );
+        }
+    }
+
+    function _bridgeEncoderAMSelectors(uint16 bridgeId) internal pure returns (bytes4[] memory selectors) {
+        if (bridgeId == ACROSS_V4_BRIDGE_ID) {
+            selectors = new bytes4[](2);
+            selectors[0] = AcrossV4BridgeEncoder.addRoute.selector;
+            selectors[1] = AcrossV4BridgeEncoder.removeRoute.selector;
+        } else if (bridgeId == LAYER_ZERO_V2_BRIDGE_ID) {
+            selectors = new bytes4[](3);
+            selectors[0] = LayerZeroV2BridgeEncoder.setLzEndpointId.selector;
+            selectors[1] = LayerZeroV2BridgeEncoder.addOft.selector;
+            selectors[2] = LayerZeroV2BridgeEncoder.removeOft.selector;
+        } else if (bridgeId == CCTP_V2_BRIDGE_ID) {
+            selectors = new bytes4[](1);
+            selectors[0] = CctpV2BridgeEncoder.setCctpDomain.selector;
+        } else {
+            revert("Base: unsupported bridgeId");
+        }
+    }
+
+    function _proxyAdminAMSelectors() internal pure returns (bytes4[] memory selectors) {
+        selectors = new bytes4[](1);
+        selectors[0] = ProxyAdmin.upgradeAndCall.selector;
     }
 
     function _executeCalls(Call[] memory calls) internal {
