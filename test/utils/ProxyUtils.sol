@@ -11,6 +11,8 @@ abstract contract ProxyUtils {
     // See OpenZeppelin's ERC1967Utils for reference.
     function getProxyAdmin(address _transparentProxy) internal view returns (address) {
         bytes32 ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-        return address(uint160(uint256(vm.load(_transparentProxy, ADMIN_SLOT))));
+        address proxyAdmin = address(uint160(uint256(vm.load(_transparentProxy, ADMIN_SLOT))));
+        require(proxyAdmin != address(0), "ProxyUtils: admin is zero address");
+        return proxyAdmin;
     }
 }
