@@ -15,6 +15,10 @@ This README outlines the steps to deploy the MakinaX contracts and to create Mak
 
 Set the `INFRA_INPUT_FILENAME` and `INFRA_OUTPUT_FILENAME` values in your `.env` file to define the input and output JSON filenames, respectively. For example, for a deployment on Ethereum Mainnet, both of these files can be named `Mainnet.json`.
 
+### View mode
+
+Steps 3 to 5 below are typically run from a multisig holding the required role in the `AccessManager` provided at step 1 (`ADMIN_ROLE` for steps 3 and 5, `INFRA_CONFIG_ROLE` for step 4). Set `VIEW_MODE=true` in your `.env` to run any of these scripts without broadcasting: it logs the target address (`AccessManager` for step 3, `MakinaXRegistry` for step 4, the bridge encoders for step 5) and the calldata of each call it would send, then exits without sending a transaction. Leave the variable unset (or `false`) for normal broadcasting.
+
 ### Shared contracts
 
 1. Copy `script/deployments/inputs/makina-x-infra/TEMPLATE.json` to `script/deployments/inputs/makina-x-infra/{INFRA_INPUT_FILENAME}` and fill in the required variables.
@@ -38,33 +42,17 @@ Note: This script performs deterministic deployment based on the deployer wallet
 forge script script/deployments/SetupMakinaXAM.s.sol --rpc-url <network-alias> --account <keystore-name> --slow --broadcast -vvvv
 ```
 
-4. Run the following command to run Registry contract setup. This sets the registry component addresses and registers the bridge encoders deployed at step 2. This script needs to be run from an address that has the `INFRA_CONFIG_ROLE` in the `AccessManager` provided at step 1.
+4. Run the following command to run Registry contract setup. This sets the registry component addresses and registers the bridge encoders deployed at step 2. This script needs to be run from an address authorized in the `AccessManager` provided at step 1.
 
 ```
 forge script script/deployments/SetupMakinaXRegistry.s.sol --rpc-url <network-alias> --account <keystore-name> --slow --broadcast -vvvv
 ```
 
-#### View mode
-
-Steps 3 and 4 are typically run from a multisig or Safe holding the `ADMIN_ROLE` and `INFRA_CONFIG_ROLE` respectively. Set `VIEW_MODE=true` in your `.env` to run either script without broadcasting: it logs the target address (`AccessManager` for step 3, `MakinaXRegistry` for step 4) and the calldata of each call it would send, then exits without sending a transaction. This is useful to review or submit the batch from a multisig. Leave the variable unset (or `false`) for normal broadcasting.
-
-### Bridge encoder setup
-
-Once the bridge encoders are registered (step 4), configure their cross-chain data with the per-chain scripts in `script/deployments/bridge-setup/`. For its local chain, each script registers on the deployed encoders:
-
-- **Across V4** - USDC and WETH transfer routes to every other supported chain.
-- **CCTP V2** - the CCTP domain of every other supported chain (Ethereum's domain is auto-registered).
-- **LayerZero V2** - the endpoint id of every other supported chain.
-
-All cross-chain reference data (token addresses, CCTP domains, LayerZero endpoint ids) lives in the shared `_chains()` table in `BridgeEncoderSetup.s.sol`; each child script (`Ethereum.s.sol`, `Arbitrum.s.sol`, `Base.s.sol`, `Polygon.s.sol`, `HyperEVM.s.sol`) only pins its local chain id. Edit `_chains()` to add a chain or adjust a value, then add a matching child script.
-
-Run the script for the chain you are configuring, using that chain's `<network-alias>`:
+5. Run the chain-specific script under `script/deployments/bridge-setup/` to configure the bridge encoders deployed at step 2. It registers the CCTP V2 domains and LayerZero V2 endpoint ids of other supported chains. This script needs to be run from an address authorized in the `AccessManager` provided at step 1. For example, on Ethereum Mainnet:
 
 ```
-forge script script/deployments/bridge-setup/Base.s.sol --rpc-url base --account <keystore-name> --slow --broadcast -vvvv
+forge script script/deployments/bridge-setup/SetupBridgeEncodersEthereum.s.sol --rpc-url <network-alias> --account <keystore-name> --slow --broadcast -vvvv
 ```
-
-The encoder setters are `restricted`, so the broadcasting account must be authorized in the `AccessManager` for those selectors (the `ADMIN_ROLE` by default). As with steps 3 and 4, set `VIEW_MODE=true` to log each call's target and calldata instead of broadcasting (e.g. to submit the batch from a multisig / Safe).
 
 ## Module Instances
 
@@ -72,7 +60,7 @@ Set the `INFRA_OUTPUT_FILENAME` (from the infrastructure deployment step, used t
 
 ### View mode
 
-Set `VIEW_MODE=true` in your `.env` to run either module creation script below without broadcasting: it logs the `ModuleFactory` target address and the calldata it would send, then exits without sending a transaction or writing an output file. This is useful to review a payload or to submit it from a multisig or Safe. Leave the variable unset (or `false`) for normal broadcasting.
+Set `VIEW_MODE=true` in your `.env` to run either module creation script below without broadcasting: it logs the `ModuleFactory` target address and the calldata it would send, then exits without sending a transaction or writing an output file. Leave the variable unset (or `false`) for normal broadcasting.
 
 ### Standard module instance
 
