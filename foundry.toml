@@ -6,6 +6,7 @@ evm_version = "prague"
 solc_version = "0.8.35"
 optimizer = true
 dynamic_test_linking = false
+ignored_warnings_from = ["lib"]
 ffi = true
 fs_permissions = [{ access = "read-write", path = "./"}]
 
