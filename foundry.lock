@@ -1,8 +1,14 @@
 {
+  "lib/enso-weiroll": {
+    "branch": {
+      "name": "main",
+      "rev": "900250114203727ff236d3f6313673c17c2d90dd"
+    }
+  },
   "lib/forge-std": {
     "tag": {
-      "name": "v1.15.0",
-      "rev": "0844d7e1fc5e60d77b68e469bff60265f236c398"
+      "name": "v1.16.2",
+      "rev": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b"
     }
   },
   "lib/openzeppelin-contracts-upgradeable": {

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+import {Vm} from "forge-std/Vm.sol";
+
 import {VM} from "@enso-weiroll/VM.sol";
 
 import {Errors} from "src/libraries/Errors.sol";
@@ -113,19 +115,20 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
         flMgmtInstruction.isDebt = true;
 
-        // overwrite IS_MANAGED_POSITION_DEBT_SLOT and MANAGED_POSITION_ID_SLOT transient slots
-        TransientOverwrite transientOverwrite = new TransientOverwrite();
+        // overwrite IS_MANAGED_POSITION_DEBT_SLOT and MANAGED_POSITION_ID_SLOT transient slots, then call
+        // manageFlashLoan within the same transaction
         bytes32 IS_MANAGED_POSITION_DEBT_SLOT = 0x4e4b4e291d20f6f03003921c4d26de1006021d95c6c1641168790b4e4b3b7200;
         bytes32 MANAGED_POSITION_ID_SLOT = 0xfbb6b868544e1f69cf175881d715d83b048bd3f24bc7e327034891f3b849d600;
-        bytes memory originalCode = address(makinaXModule).code;
-        vm.etch(address(makinaXModule), address(transientOverwrite).code);
-        TransientOverwrite(address(makinaXModule)).set(IS_MANAGED_POSITION_DEBT_SLOT, bytes32(uint256(1)));
-        TransientOverwrite(address(makinaXModule)).set(MANAGED_POSITION_ID_SLOT, bytes32(LOOP_POS_ID));
-        vm.etch(address(makinaXModule), originalCode);
+        TransientContextCaller transientContextCaller = new TransientContextCaller();
 
         vm.expectRevert(Errors.InvalidDebtFlag.selector);
-        vm.prank(address(flashLoanModule));
-        makinaXModule.manageFlashLoan(flMgmtInstruction, address(0), 0);
+        transientContextCaller.setTransientAndCall(
+            address(makinaXModule),
+            [IS_MANAGED_POSITION_DEBT_SLOT, MANAGED_POSITION_ID_SLOT],
+            [bytes32(uint256(1)), bytes32(LOOP_POS_ID)],
+            address(flashLoanModule),
+            abi.encodeCall(IWeirollComponent.manageFlashLoan, (flMgmtInstruction, address(0), 0))
+        );
     }
 
     function test_ManageFlashLoan() public {
@@ -159,6 +162,34 @@ contract TransientOverwrite {
     function set(bytes32 slot, bytes32 value) external {
         assembly ("memory-safe") {
             tstore(slot, value)
+        }
+    }
+}
+
+/// @dev Writes transient storage slots of `target` and calls it within the same transaction,
+/// so the transient state is still set when the call executes under isolated test mode.
+contract TransientContextCaller {
+    Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    function setTransientAndCall(
+        address target,
+        bytes32[2] memory slots,
+        bytes32[2] memory values,
+        address caller,
+        bytes memory data
+    ) external {
+        bytes memory originalCode = target.code;
+        vm.etch(target, type(TransientOverwrite).runtimeCode);
+        TransientOverwrite(target).set(slots[0], values[0]);
+        TransientOverwrite(target).set(slots[1], values[1]);
+        vm.etch(target, originalCode);
+
+        vm.prank(caller);
+        (bool success, bytes memory returnData) = target.call(data);
+        if (!success) {
+            assembly ("memory-safe") {
+                revert(add(returnData, 0x20), mload(returnData))
+            }
         }
     }
 }

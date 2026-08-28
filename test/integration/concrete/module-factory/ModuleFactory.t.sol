@@ -7,7 +7,7 @@ import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
 import {Integration_Concrete_Test} from "../IntegrationConcrete.t.sol";
 
 abstract contract ModuleFactory_Integration_Concrete_Test is Integration_Concrete_Test {
-    function _defaultInitParams(address _safe) internal view returns (IMakinaXModule.MakinaXModuleInitParams memory) {
+    function _defaultInitParams(address _safe) internal pure returns (IMakinaXModule.MakinaXModuleInitParams memory) {
         return IMakinaXModule.MakinaXModuleInitParams({
             safe: _safe,
             initialOperatingMode: IMakinaXGovernable.OperatingMode.OPEN,
