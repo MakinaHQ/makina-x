@@ -16,11 +16,12 @@ import {LayerZeroV2BridgeEncoder} from "../../src/bridge-encoders/LayerZeroV2Bri
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 import {MakinaXModule} from "../../src/MakinaXModule.sol";
 import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
+import {IRCodeReader} from "../utils/IRCodeReader.sol";
 import {ProxyUtils} from "../utils/ProxyUtils.sol";
 import {Roles} from "../utils/Roles.sol";
 import {SaltDomains} from "../utils/SaltDomains.sol";
 
-abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
+abstract contract Base is IRCodeReader, ProxyUtils, SaltDomains, IntegrationIds {
     struct MakinaXInfra {
         AccessManagerUpgradeable accessManager;
         MakinaXRegistry registry;
@@ -41,13 +42,13 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
 
     function deployMakinaXInfra(
         address _initialAMAdmin,
-        address _weirollVM,
         FlashLoanProviders memory flProviders,
         address _defaultProvider,
         uint256 _defaultSwapFeeRate,
         bool _freeDeployment
     ) internal returns (MakinaXInfra memory deployment) {
         deployment.accessManager = _deployAccessManager(_initialAMAdmin, _initialAMAdmin);
+        address weirollVM = _deployWeirollVM();
         deployment.registry =
             _deployMakinaXRegistry(address(deployment.accessManager), address(deployment.accessManager));
         deployment.moduleFactory = _deployModuleFactory(
@@ -58,7 +59,7 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
             _defaultSwapFeeRate,
             _freeDeployment
         );
-        deployment.makinaXModuleImplem = _deployMakinaXModuleImplem(address(deployment.registry), _weirollVM);
+        deployment.makinaXModuleImplem = _deployMakinaXModuleImplem(address(deployment.registry), weirollVM);
         deployment.flashLoanModule = _deployFlashLoanModule(address(deployment.moduleFactory), flProviders);
     }
 
@@ -226,6 +227,10 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
                 ACCESS_MANAGER_SALT_DOMAIN
             )
         );
+    }
+
+    function _deployWeirollVM() internal returns (address weirollVM) {
+        return _deployCode(getWeirollVMCode(), WEIROLL_VM_SALT_DOMAIN);
     }
 
     function _deployMakinaXRegistry(address _proxyOwner, address _accessManager)

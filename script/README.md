@@ -5,6 +5,7 @@ This README outlines the steps to deploy the MakinaX contracts and to create Mak
 ## Environment setup
 
 - Copy `.env.example` to `.env` and fill in the required RPC URLs, Etherscan API URLs, and API keys.
+- Build the project as described in the [root README](../README.md). `yarn build:ir` is required, as `DeployMakinaX` deploys `WeirollVM` from the IR build output.
 - Some networks are preconfigured in `foundry.toml` and only require the corresponding environment variables. More networks can be added following similar configuration.
 - Notation used in the commands:
   - `<wallet-options>` - the flags specifying the deployer wallet, see the [Foundry docs](https://getfoundry.sh/forge/reference/script/)

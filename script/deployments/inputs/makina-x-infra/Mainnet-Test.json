@@ -15,7 +15,6 @@
       "executionDelay": 0
     }
   ],
-  "weirollVM": "0xFD162A672928bf40E5A81F0D11501D2849841FA6",
   "feeCollector": "0x0000000000000000000000000000000000000DA0",
   "defaultProvider": "0x0000000000000000000000000000000000000DA0",
   "defaultSwapFeeRate": 0,

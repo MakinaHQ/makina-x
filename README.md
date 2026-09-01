@@ -44,7 +44,7 @@ yarn
 
 ### Build
 
-Run below command to compile contracts that require IR-based codegen (`test-ir/`)
+Run below command to compile contracts that require IR-based codegen (`src-ir/` and `test-ir/`)
 
 ```shell
 yarn build:ir

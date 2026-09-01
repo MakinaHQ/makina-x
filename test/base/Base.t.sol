@@ -8,8 +8,8 @@ import {
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 import {Constants} from "../utils/Constants.sol";
+import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
 import {FlashLoanModule} from "src/flash-loans/FlashLoanModule.sol";
-import {IRCodeReader} from "../utils/IRCodeReader.sol";
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
 import {MockMorpho} from "../mocks/MockMorpho.sol";
@@ -17,7 +17,7 @@ import {MockSafe} from "../mocks/MockSafe.sol";
 
 import {Base} from "./Base.sol";
 
-abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
+abstract contract Base_Test is Base, Constants, Test {
     address internal deployer;
 
     address internal dao;
@@ -45,14 +45,13 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
 
         morpho = new MockMorpho();
 
-        _deployWeirollVM();
-
         safe = new MockSafe();
 
         MakinaXInfra memory makinaXInfra = deployMakinaXInfra(
-            deployer, weirollVM, FlashLoanProviders({morpho: address(morpho)}), dao, DEFAULT_SWAP_FEE_RATE, false
+            deployer, FlashLoanProviders({morpho: address(morpho)}), dao, DEFAULT_SWAP_FEE_RATE, false
         );
         accessManager = makinaXInfra.accessManager;
+        weirollVM = IMakinaXModule(makinaXInfra.makinaXModuleImplem).weirollVm();
         registry = makinaXInfra.registry;
         moduleFactory = makinaXInfra.moduleFactory;
         makinaXModuleImplem = makinaXInfra.makinaXModuleImplem;
@@ -63,13 +62,5 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
         setupAccessManagerRoles(
             accessManager, AMRoleGrant({roleId: 0, account: dao, executionDelay: 0}), new AMRoleGrant[](0), deployer
         );
-    }
-
-    ///
-    /// INFRA UTILS
-    ///
-
-    function _deployWeirollVM() internal {
-        weirollVM = _deployCode(getWeirollVMCode(), 0);
     }
 }

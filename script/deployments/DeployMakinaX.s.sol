@@ -73,7 +73,6 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
     }
 
     function _coreSetup() internal {
-        address weirollVM = vm.parseJsonAddress(inputJson, ".weirollVM");
         address feeCollector = vm.parseJsonAddress(inputJson, ".feeCollector");
         FlashLoanProviders memory flProviders =
             FlashLoanProviders({morpho: vm.parseJsonAddress(inputJson, ".flashLoanProviders.morpho")});
@@ -82,8 +81,7 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
         bool freeDeployment = vm.parseJsonBool(inputJson, ".freeDeployment");
 
         // Deploy the AccessManager with the deployer as temporary admin, then the infrastructure wired to it.
-        _infra =
-            deployMakinaXInfra(deployer, weirollVM, flProviders, defaultProvider, defaultSwapFeeRate, freeDeployment);
+        _infra = deployMakinaXInfra(deployer, flProviders, defaultProvider, defaultSwapFeeRate, freeDeployment);
         _deployBridgeEncoders(address(_infra.accessManager));
 
         // Until function roles are assigned below, restricted functions default to the deployer's ADMIN_ROLE,

@@ -38,9 +38,6 @@ contract Deploy_Scripts_Test is Base_Test {
         address superAdmin = vm.parseJsonAddress(deployMakinaX.inputJson(), ".superAdminRoleGrant.account");
         assertTrue(superAdmin != address(0));
 
-        address weirollVM = vm.parseJsonAddress(deployMakinaX.inputJson(), ".weirollVM");
-        assertTrue(weirollVM != address(0));
-
         address feeCollector = vm.parseJsonAddress(deployMakinaX.inputJson(), ".feeCollector");
         assertTrue(feeCollector != address(0));
 
@@ -84,12 +81,14 @@ contract Deploy_Scripts_Test is Base_Test {
         string memory inputJson = deployMakinaX.inputJson();
 
         address accessManager = address(infra.accessManager);
-        address expectedWeirollVM = vm.parseJsonAddress(inputJson, ".weirollVM");
         address expectedFeeCollector = vm.parseJsonAddress(inputJson, ".feeCollector");
         address expectedMorpho = vm.parseJsonAddress(inputJson, ".flashLoanProviders.morpho");
 
         // Check that a new AccessManager is deployed
         assertTrue(accessManager != address(0));
+
+        // Check that a new WeirollVM is deployed
+        assertTrue(IMakinaXModule(infra.makinaXModuleImplem).weirollVm().code.length > 0);
 
         // Check that MakinaXRegistry is correctly set up
         assertEq(infra.registry.moduleFactory(), address(infra.moduleFactory));
@@ -112,7 +111,6 @@ contract Deploy_Scripts_Test is Base_Test {
 
         // Check that MakinaXModule implementation is correctly wired up
         assertEq(IMakinaXModule(infra.makinaXModuleImplem).registry(), address(infra.registry));
-        assertEq(IMakinaXModule(infra.makinaXModuleImplem).weirollVm(), address(expectedWeirollVM));
 
         // Check that bridge encoders are correctly set up and registered
         assertEq(bridgeIds.length, bridgeEncoders.length);
