@@ -6,7 +6,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
+import {Errors} from "src/libraries/Errors.sol";
 import {IMakinaXModule} from "src/interfaces/IMakinaXModule.sol";
+import {ICctpV2BridgeEncoder} from "src/interfaces/ICctpV2BridgeEncoder.sol";
+import {ILayerZeroV2BridgeEncoder} from "src/interfaces/ILayerZeroV2BridgeEncoder.sol";
 import {AcrossV4BridgeEncoder} from "src/bridge-encoders/AcrossV4BridgeEncoder.sol";
 import {CctpV2BridgeEncoder} from "src/bridge-encoders/CctpV2BridgeEncoder.sol";
 import {LayerZeroV2BridgeEncoder} from "src/bridge-encoders/LayerZeroV2BridgeEncoder.sol";
@@ -16,6 +19,7 @@ import {ModuleFactory} from "src/factory/ModuleFactory.sol";
 import {CreateModule} from "script/deployments/CreateModule.s.sol";
 import {CreateModuleFree} from "script/deployments/CreateModuleFree.s.sol";
 import {DeployMakinaX} from "script/deployments/DeployMakinaX.s.sol";
+import {SetupBridgeEncoders} from "script/setup/SetupBridgeEncoders.s.sol";
 
 import {Roles} from "../utils/Roles.sol";
 import {Base_Test} from "../base/Base.t.sol";
@@ -215,6 +219,44 @@ contract Deploy_Scripts_Test is Base_Test {
         assertEq(module.swapFeeRate(), infra.moduleFactory.defaultSwapFeeRate());
     }
 
+    function testScript_SetupBridgeEncoders() public {
+        vm.createSelectFork({urlOrAlias: "mainnet"});
+
+        deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setTestMode();
+        deployMakinaX.run();
+
+        (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
+            deployMakinaX.deployment();
+
+        SetupBridgeEncoders setupBridgeEncoders = new SetupBridgeEncoders();
+        setupBridgeEncoders.setParams(address(infra.accessManager), bridgeIds, bridgeEncoders);
+        setupBridgeEncoders.run();
+
+        address cctpEncoder;
+        address lzEncoder;
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            if (bridgeIds[i] == CCTP_V2_BRIDGE_ID) {
+                cctpEncoder = bridgeEncoders[i];
+            } else if (bridgeIds[i] == LAYER_ZERO_V2_BRIDGE_ID) {
+                lzEncoder = bridgeEncoders[i];
+            }
+        }
+
+        // CCTP domains of foreign chains are registered (Ethereum's own domain 0 is auto-registered)
+        assertEq(ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(1), 0);
+        assertEq(ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(42161), 3);
+        assertEq(ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(8453), 6);
+
+        // Chains without CCTP support are not registered
+        vm.expectRevert(Errors.CctpDomainNotRegistered.selector);
+        ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(4663);
+
+        // LayerZero endpoint ids of foreign chains are registered
+        assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(42161), 30110);
+        assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(4663), 30416);
+    }
+
     function _assertModuleSetup(IMakinaXModule module, MakinaXInfra memory infra, string memory inputJson)
         internal
         view
@@ -304,40 +346,14 @@ contract Deploy_Scripts_Test is Base_Test {
 
         // Every deployed bridge encoder is guarded as well
         for (uint256 i; i < bridgeIds.length; ++i) {
-            _assertBridgeEncoderAMRoles(accessManager, bridgeIds[i], bridgeEncoders[i]);
+            _assertBridgeEncoderAMFunctionRoles(accessManager, bridgeIds[i], bridgeEncoders[i]);
         }
     }
 
-    function _assertAMRoleGrants(address accessManager, string memory inputJson) internal view {
-        uint64 adminRole = 0;
-
-        // The super admin is granted ADMIN_ROLE with the configured execution delay
-        address superAdmin = vm.parseJsonAddress(inputJson, ".superAdminRoleGrant.account");
-        uint32 superAdminDelay = uint32(vm.parseJsonUint(inputJson, ".superAdminRoleGrant.executionDelay"));
-        (bool isMember, uint32 executionDelay) = IAccessManager(accessManager).hasRole(adminRole, superAdmin);
-        assertTrue(isMember);
-        assertEq(executionDelay, superAdminDelay);
-
-        // The other role grants are applied
-        uint256 len;
-        while (vm.keyExistsJson(inputJson, string.concat(".otherRoleGrants[", vm.toString(len), "]"))) {
-            string memory base = string.concat(".otherRoleGrants[", vm.toString(len), "]");
-            uint64 roleId = uint64(vm.parseJsonUint(inputJson, string.concat(base, ".roleId")));
-            address account = vm.parseJsonAddress(inputJson, string.concat(base, ".account"));
-            uint32 expectedDelay = uint32(vm.parseJsonUint(inputJson, string.concat(base, ".executionDelay")));
-            (isMember, executionDelay) = IAccessManager(accessManager).hasRole(roleId, account);
-            assertTrue(isMember);
-            assertEq(executionDelay, expectedDelay);
-            ++len;
-        }
-        assertTrue(len > 0);
-
-        // The deployer no longer holds ADMIN_ROLE
-        (isMember,) = IAccessManager(accessManager).hasRole(adminRole, deployMakinaX.deployer());
-        assertFalse(isMember);
-    }
-
-    function _assertBridgeEncoderAMRoles(address accessManager, uint16 bridgeId, address encoder) internal view {
+    function _assertBridgeEncoderAMFunctionRoles(address accessManager, uint16 bridgeId, address encoder)
+        internal
+        view
+    {
         // The encoder's transparent proxy admin upgradeAndCall is guarded by INFRA_UPGRADE_ROLE
         assertEq(
             IAccessManager(accessManager)
@@ -369,6 +385,35 @@ contract Deploy_Scripts_Test is Base_Test {
                 Roles.INFRA_CONFIG_ROLE
             );
         }
+    }
+
+    function _assertAMRoleGrants(address accessManager, string memory inputJson) internal view {
+        uint64 adminRole = 0;
+
+        // The super admin is granted ADMIN_ROLE with the configured execution delay
+        address superAdmin = vm.parseJsonAddress(inputJson, ".superAdminRoleGrant.account");
+        uint32 superAdminDelay = uint32(vm.parseJsonUint(inputJson, ".superAdminRoleGrant.executionDelay"));
+        (bool isMember, uint32 executionDelay) = IAccessManager(accessManager).hasRole(adminRole, superAdmin);
+        assertTrue(isMember);
+        assertEq(executionDelay, superAdminDelay);
+
+        // The other role grants are applied
+        uint256 len;
+        while (vm.keyExistsJson(inputJson, string.concat(".otherRoleGrants[", vm.toString(len), "]"))) {
+            string memory base = string.concat(".otherRoleGrants[", vm.toString(len), "]");
+            uint64 roleId = uint64(vm.parseJsonUint(inputJson, string.concat(base, ".roleId")));
+            address account = vm.parseJsonAddress(inputJson, string.concat(base, ".account"));
+            uint32 expectedDelay = uint32(vm.parseJsonUint(inputJson, string.concat(base, ".executionDelay")));
+            (isMember, executionDelay) = IAccessManager(accessManager).hasRole(roleId, account);
+            assertTrue(isMember);
+            assertEq(executionDelay, expectedDelay);
+            ++len;
+        }
+        assertTrue(len > 0);
+
+        // The deployer no longer holds ADMIN_ROLE
+        (isMember,) = IAccessManager(accessManager).hasRole(adminRole, deployMakinaX.deployer());
+        assertFalse(isMember);
     }
 
     function _bridgesTargetsLength(string memory inputJson) internal view returns (uint256 len) {

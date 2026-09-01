@@ -32,10 +32,10 @@ forge script script/deployments/DeployMakinaX.s.sol --rpc-url <network-alias> <w
 
 Note: This script performs deterministic deployment based on the deployer wallet address via the [CreateX Factory contract](https://github.com/pcaversaccio/createx).
 
-3. Run the chain-specific script under `script/deployments/bridge-setup/` to configure the bridge encoders deployed at step 2. It registers the CCTP V2 domains and LayerZero V2 endpoint ids of other supported chains. This script needs to be run from an address holding the `INFRA_CONFIG_ROLE` in the `AccessManager` deployed at step 2. For example, on Ethereum Mainnet:
+3. Run the following command to configure the bridge encoders deployed at step 2. The script detects the connected chain via its chain id (which must be one of the supported chains listed in the script) and registers the CCTP V2 domains and LayerZero V2 endpoint ids of the other supported chains. This script needs to be run from an address holding the `INFRA_CONFIG_ROLE` in the `AccessManager` deployed at step 2.
 
 ```
-forge script script/deployments/bridge-setup/SetupBridgeEncodersEthereum.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
+forge script script/setup/SetupBridgeEncoders.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
 
 A deployment is either staging, where the deployer keeps sole control of the `AccessManager`, or production, where control is handed to the configured accounts at step 2. Each flavor has one optional `.env` setting.
@@ -46,7 +46,7 @@ Set `SKIP_AM_SETUP=true` to skip the `AccessManager` setup at step 2 (function r
 
 ### Production: view mode (step 3)
 
-In production, step 3 is run from an account holding the `INFRA_CONFIG_ROLE`. Set `VIEW_MODE=true` to log each call's target (bridge encoder) and calldata for the account to submit, instead of broadcasting. Leave unset (or `false`) to broadcast.
+In production, step 3 is run from an account holding the `INFRA_CONFIG_ROLE`. Set `VIEW_MODE=true` to log each call's target (bridge encoder) and calldata for the account to submit, instead of broadcasting. The target chain's `--rpc-url` is still required, as the script selects the chain via its chain id. Leave the variable unset (or `false`) to broadcast.
 
 ## Module Instances
 

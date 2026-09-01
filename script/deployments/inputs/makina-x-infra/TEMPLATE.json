@@ -19,8 +19,7 @@
   },
   "bridgesTargets": [
     {
-      "bridgeId": 0,
-      "bridgeRouter": "0x0000000000000000000000000000000000000000"
+      "bridgeId": 0
     }
   ]
 }
