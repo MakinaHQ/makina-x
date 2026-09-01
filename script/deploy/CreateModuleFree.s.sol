@@ -15,11 +15,11 @@ import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 ///
 /// Env vars:
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the ModuleFactory address
-///                            (under script/deployments/outputs/makina-x-infra/)
+///                            (under script/deploy/outputs/infra/)
 ///   MODULE_INPUT_FILENAME  - module init params input file
-///                            (under script/deployments/inputs/makina-x-modules/)
+///                            (under script/deploy/inputs/modules/)
 ///   MODULE_OUTPUT_FILENAME - file to write the deployed module address to
-///                            (under script/deployments/outputs/makina-x-modules/, unused when VIEW_MODE is true)
+///                            (under script/deploy/outputs/modules/, unused when VIEW_MODE is true)
 ///   VIEW_MODE (optional)   - if true, logs the ModuleFactory call calldata instead of deploying
 contract CreateModuleFree is Script {
     using stdJson for string;
@@ -44,13 +44,13 @@ contract CreateModuleFree is Script {
     {
         moduleFactory = ModuleFactory(_moduleFactory);
 
-        string memory basePath = string.concat(vm.projectRoot(), "/script/deployments/");
+        string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
 
         // load module init params
-        moduleInputJson = vm.readFile(string.concat(basePath, "inputs/makina-x-modules/", moduleInputFilename));
+        moduleInputJson = vm.readFile(string.concat(basePath, "inputs/modules/", moduleInputFilename));
 
         // output path to later save the deployed module
-        moduleOutputPath = string.concat(basePath, "outputs/makina-x-modules/", moduleOutputFilename);
+        moduleOutputPath = string.concat(basePath, "outputs/modules/", moduleOutputFilename);
     }
 
     function deployment() public view returns (address) {

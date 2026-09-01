@@ -30,7 +30,7 @@ import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 ///
 /// Env vars:
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the deployed contract addresses
-///                            (under script/deployments/outputs/makina-x-infra/)
+///                            (under script/deploy/outputs/infra/)
 ///   VIEW_MODE (optional)   - if true, logs each call's target + calldata instead of broadcasting
 contract SetupBridgeEncoders is Script, IntegrationIds {
     struct Call {
@@ -185,9 +185,7 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
     ///      from the file are left unset: `_buildCalls` only requires the ones the local chain supports.
     function _loadParamsFromEnv() internal {
         string memory outputJson = vm.readFile(
-            string.concat(
-                vm.projectRoot(), "/script/deployments/outputs/makina-x-infra/", vm.envString("INFRA_OUTPUT_FILENAME")
-            )
+            string.concat(vm.projectRoot(), "/script/deploy/outputs/infra/", vm.envString("INFRA_OUTPUT_FILENAME"))
         );
 
         accessManager = vm.parseJsonAddress(outputJson, ".AccessManager");

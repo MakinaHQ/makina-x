@@ -15,7 +15,7 @@ This README outlines the steps to deploy the MakinaX contracts and to create Mak
 
 Set the `INFRA_INPUT_FILENAME` and `INFRA_OUTPUT_FILENAME` values in your `.env` file to define the input and output JSON filenames, respectively. For example, for a deployment on Ethereum Mainnet, both of these files can be named `Mainnet.json`.
 
-1. Copy `script/deployments/inputs/makina-x-infra/TEMPLATE.json` to `script/deployments/inputs/makina-x-infra/{INFRA_INPUT_FILENAME}` and fill in the required variables.
+1. Copy `script/deploy/inputs/infra/TEMPLATE.json` to `script/deploy/inputs/infra/{INFRA_INPUT_FILENAME}` and fill in the required variables.
 
    The `superAdminRoleGrant` entry sets the account granted the `ADMIN_ROLE` in the deployed `AccessManager`, with its execution delay. The `otherRoleGrants` array declares additional role grants, one entry per `roleId`/`account`/`executionDelay` triple.
 
@@ -24,10 +24,10 @@ Set the `INFRA_INPUT_FILENAME` and `INFRA_OUTPUT_FILENAME` values in your `.env`
    - `2` (LayerZero V2) - no additional field
    - `3` (CCTP V2) - requires `cctpV2TokenMessenger`
 
-2. Run the following command to initiate the deployment of infrastructure contracts, as well as registry and Access Management setup. This will generate an output file at `script/deployments/outputs/makina-x-infra/{INFRA_OUTPUT_FILENAME}` containing the deployed contract addresses.
+2. Run the following command to initiate the deployment of infrastructure contracts, as well as registry and Access Management setup. This will generate an output file at `script/deploy/outputs/infra/{INFRA_OUTPUT_FILENAME}` containing the deployed contract addresses.
 
 ```
-forge script script/deployments/DeployMakinaX.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast --verify -vvvv
+forge script script/deploy/DeployMakinaX.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast --verify -vvvv
 ```
 
 Note: This script performs deterministic deployment based on the deployer wallet address via the [CreateX Factory contract](https://github.com/pcaversaccio/createx).
@@ -60,20 +60,20 @@ Set `VIEW_MODE=true` in your `.env` to run either module creation script below w
 
 Deployed through `ModuleFactory.createModule`, which is a permissioned call. The broadcasting address must have the `STRATEGY_DEPLOYMENT_ROLE` in the `AccessManager`.
 
-1. Copy `script/deployments/inputs/makina-x-modules/TEMPLATE.json` to `script/deployments/inputs/makina-x-modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
-2. Run the following command to initiate the deployment. This will generate an output file at `script/deployments/outputs/makina-x-modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
+1. Copy `script/deploy/inputs/modules/TEMPLATE.json` to `script/deploy/inputs/modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
+2. Run the following command to initiate the deployment. This will generate an output file at `script/deploy/outputs/modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
 
 ```
-forge script script/deployments/CreateModule.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
+forge script script/deploy/CreateModule.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
 
 ### Free module instance
 
 Deployed through `ModuleFactory.createModuleFree`, which is callable by anyone while free deployment is enabled on the `ModuleFactory`. The service parameters (provider and swap fee rate) are enforced by the factory, so the input file omits them.
 
-1. Copy `script/deployments/inputs/makina-x-modules/TEMPLATE-Free.json` to `script/deployments/inputs/makina-x-modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
-2. Run the following command to initiate the deployment. This will generate an output file at `script/deployments/outputs/makina-x-modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
+1. Copy `script/deploy/inputs/modules/TEMPLATE-Free.json` to `script/deploy/inputs/modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
+2. Run the following command to initiate the deployment. This will generate an output file at `script/deploy/outputs/modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
 
 ```
-forge script script/deployments/CreateModuleFree.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
+forge script script/deploy/CreateModuleFree.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```

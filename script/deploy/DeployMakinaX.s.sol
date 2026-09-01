@@ -11,9 +11,9 @@ import {Base} from "../../test/base/Base.sol";
 ///
 /// Env vars:
 ///   INFRA_INPUT_FILENAME     - infra input file holding the deployment parameters
-///                              (under script/deployments/inputs/makina-x-infra/)
+///                              (under script/deploy/inputs/infra/)
 ///   INFRA_OUTPUT_FILENAME    - infra output file to write the deployed contract addresses to
-///                              (under script/deployments/outputs/makina-x-infra/)
+///                              (under script/deploy/outputs/infra/)
 ///   SKIP_AM_SETUP (optional) - if true, skips the AccessManager function roles and role grants setup,
 ///                              leaving the deployer as sole admin (for staging infra deployments)
 contract DeployMakinaX is Base, Script, CreateXUtils {
@@ -36,15 +36,15 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
         string memory inputFilename = vm.envString("INFRA_INPUT_FILENAME");
         string memory outputFilename = vm.envString("INFRA_OUTPUT_FILENAME");
 
-        string memory basePath = string.concat(vm.projectRoot(), "/script/deployments/");
+        string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
 
         // load input params
-        string memory inputPath = string.concat(basePath, "inputs/makina-x-infra/");
+        string memory inputPath = string.concat(basePath, "inputs/infra/");
         inputPath = string.concat(inputPath, inputFilename);
         inputJson = vm.readFile(inputPath);
 
         // output path to later save deployed contracts
-        outputPath = string.concat(basePath, "outputs/makina-x-infra/");
+        outputPath = string.concat(basePath, "outputs/infra/");
         outputPath = string.concat(outputPath, outputFilename);
     }
 
@@ -110,7 +110,7 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
             return;
         }
 
-        string memory key = "key-deploy-makina-x-infra-output-file";
+        string memory key = "key-deploy-infra-output-file";
 
         // write to file
         vm.serializeAddress(key, "AccessManager", address(_infra.accessManager));

@@ -16,9 +16,9 @@ import {LayerZeroV2BridgeEncoder} from "src/bridge-encoders/LayerZeroV2BridgeEnc
 import {MakinaXRegistry} from "src/registry/MakinaXRegistry.sol";
 import {ModuleFactory} from "src/factory/ModuleFactory.sol";
 
-import {CreateModule} from "script/deployments/CreateModule.s.sol";
-import {CreateModuleFree} from "script/deployments/CreateModuleFree.s.sol";
-import {DeployMakinaX} from "script/deployments/DeployMakinaX.s.sol";
+import {CreateModule} from "script/deploy/CreateModule.s.sol";
+import {CreateModuleFree} from "script/deploy/CreateModuleFree.s.sol";
+import {DeployMakinaX} from "script/deploy/DeployMakinaX.s.sol";
 import {SetupBridgeEncoders} from "script/setup/SetupBridgeEncoders.s.sol";
 
 import {Roles} from "../utils/Roles.sol";
