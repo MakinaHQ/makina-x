@@ -21,38 +21,36 @@ import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 ///   MODULE_OUTPUT_FILENAME - file to write the deployed module address to
 ///                            (under script/deployments/outputs/makina-x-modules/, unused when VIEW_MODE is true)
 ///   VIEW_MODE (optional)   - if true, logs the ModuleFactory call calldata instead of deploying
-///   TEST_SENDER (optional) - account to broadcast from
 contract CreateModuleFree is Script {
     using stdJson for string;
 
-    string public infraOutputJson;
     string public moduleInputJson;
     string public moduleOutputPath;
 
     bool public viewMode;
 
+    ModuleFactory public moduleFactory;
+
     address public module;
 
     constructor() {
         viewMode = vm.envOr("VIEW_MODE", false);
+    }
+
+    /// @dev Test hook to set the ModuleFactory and the module input/output filenames explicitly, instead of having
+    ///      `run` resolve them from the env vars and the infra output file.
+    function setParams(address _moduleFactory, string memory moduleInputFilename, string memory moduleOutputFilename)
+        public
+    {
+        moduleFactory = ModuleFactory(_moduleFactory);
 
         string memory basePath = string.concat(vm.projectRoot(), "/script/deployments/");
 
-        // load ModuleFactory address from the infra output file
-        string memory infraOutputPath = string.concat(basePath, "outputs/makina-x-infra/");
-        infraOutputPath = string.concat(infraOutputPath, vm.envString("INFRA_OUTPUT_FILENAME"));
-        infraOutputJson = vm.readFile(infraOutputPath);
-
         // load module init params
-        string memory moduleInputPath = string.concat(basePath, "inputs/makina-x-modules/");
-        moduleInputPath = string.concat(moduleInputPath, vm.envString("MODULE_INPUT_FILENAME"));
-        moduleInputJson = vm.readFile(moduleInputPath);
+        moduleInputJson = vm.readFile(string.concat(basePath, "inputs/makina-x-modules/", moduleInputFilename));
 
-        // output path to later save the deployed module (not needed in view mode)
-        if (!viewMode) {
-            moduleOutputPath = string.concat(basePath, "outputs/makina-x-modules/");
-            moduleOutputPath = string.concat(moduleOutputPath, vm.envString("MODULE_OUTPUT_FILENAME"));
-        }
+        // output path to later save the deployed module
+        moduleOutputPath = string.concat(basePath, "outputs/makina-x-modules/", moduleOutputFilename);
     }
 
     function deployment() public view returns (address) {
@@ -60,7 +58,9 @@ contract CreateModuleFree is Script {
     }
 
     function run() public {
-        ModuleFactory moduleFactory = ModuleFactory(vm.parseJsonAddress(infraOutputJson, ".ModuleFactory"));
+        if (address(moduleFactory) == address(0)) {
+            _loadParamsFromEnv();
+        }
 
         IMakinaXModule.MakinaXModuleInitParams memory params = _parseInitParams();
         bytes32 salt = vm.parseJsonBytes32(moduleInputJson, ".salt");
@@ -72,18 +72,28 @@ contract CreateModuleFree is Script {
             return;
         }
 
-        address sender = vm.envOr("TEST_SENDER", address(0));
-        if (sender != address(0)) {
-            vm.startBroadcast(sender);
-        } else {
-            vm.startBroadcast();
-        }
+        vm.startBroadcast();
 
         module = moduleFactory.createModuleFree(params, salt, referralKey);
 
         vm.stopBroadcast();
 
         _writeOutput();
+    }
+
+    /// @dev Calls `setParams` with this script's env vars, reading the factory address from the infra output file.
+    ///      The output filename is not needed in view mode.
+    function _loadParamsFromEnv() internal {
+        string memory infraOutputPath = string.concat(
+            vm.projectRoot(), "/script/deployments/outputs/makina-x-infra/", vm.envString("INFRA_OUTPUT_FILENAME")
+        );
+        string memory moduleOutputFilename = viewMode ? "" : vm.envString("MODULE_OUTPUT_FILENAME");
+
+        setParams(
+            vm.parseJsonAddress(vm.readFile(infraOutputPath), ".ModuleFactory"),
+            vm.envString("MODULE_INPUT_FILENAME"),
+            moduleOutputFilename
+        );
     }
 
     function _parseInitParams() internal view returns (IMakinaXModule.MakinaXModuleInitParams memory) {

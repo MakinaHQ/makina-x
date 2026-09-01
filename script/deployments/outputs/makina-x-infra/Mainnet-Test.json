@@ -1,4 +1,5 @@
 {
+  "AccessManager": "0xAB8AeF36B032DD0c153c9828266118F584C5B4c6",
   "BridgeEncoders": {
     "1": "0x3a88c0108f582dc16e66A0c9a2B950ebfd6411a3",
     "2": "0xa9C28a6DB3C7ed35f31c61B314808373d3414171",

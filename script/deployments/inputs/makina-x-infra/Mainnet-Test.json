@@ -1,10 +1,25 @@
 {
-  "accessManager": "0x4B3336630e591D36ca81f0c25b798895289dDD30",
+  "superAdminRoleGrant": {
+    "account": "0x0000000000000000000000000000000000000DA0",
+    "executionDelay": 0
+  },
+  "otherRoleGrants": [
+    {
+      "roleId": 1,
+      "account": "0x0000000000000000000000000000000000000DA0",
+      "executionDelay": 0
+    },
+    {
+      "roleId": 2,
+      "account": "0x0000000000000000000000000000000000000DE9",
+      "executionDelay": 0
+    }
+  ],
   "weirollVM": "0xFD162A672928bf40E5A81F0D11501D2849841FA6",
   "feeCollector": "0x0000000000000000000000000000000000000DA0",
-  "defaultProvider": "0x0000000000000000000000000000000000000000",
+  "defaultProvider": "0x0000000000000000000000000000000000000DA0",
   "defaultSwapFeeRate": 0,
-  "freeDeployment": false,
+  "freeDeployment": true,
   "flashLoanProviders": {
     "morpho": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
   },

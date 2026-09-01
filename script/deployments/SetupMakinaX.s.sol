@@ -7,7 +7,11 @@ pragma solidity 0.8.35;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {
+    AccessManagerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 import {FlashLoanModule} from "../../src/flash-loans/FlashLoanModule.sol";
 import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
@@ -20,13 +24,17 @@ import {Base} from "../../test/base/Base.sol";
 /// @dev Alongside each call's raw calldata, view mode logs the `AccessManager.schedule` wrapper.
 ///
 /// Env vars:
-///   INFRA_INPUT_FILENAME   - infra input file holding the AccessManager address
+///   INFRA_INPUT_FILENAME   - infra input file holding the deployment parameters
 ///                            (under script/deployments/inputs/makina-x-infra/)
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the deployed contract addresses
 ///                            (under script/deployments/outputs/makina-x-infra/)
 ///   VIEW_MODE (optional)   - if true, logs each call's target + calldata instead of broadcasting
-///   TEST_SENDER (optional) - account to broadcast from
 abstract contract SetupMakinaX is Base, Script {
+    struct Call {
+        address target;
+        bytes data;
+    }
+
     string public deploymentInputJson;
     string public deploymentOutputJson;
 
@@ -59,12 +67,7 @@ abstract contract SetupMakinaX is Base, Script {
             return;
         }
 
-        address sender = vm.envOr("TEST_SENDER", address(0));
-        if (sender != address(0)) {
-            vm.startBroadcast(sender);
-        } else {
-            vm.startBroadcast();
-        }
+        vm.startBroadcast();
 
         _executeCalls(calls);
 
@@ -77,12 +80,9 @@ abstract contract SetupMakinaX is Base, Script {
     /// @dev Label describing the target of this script's calls, used in view mode.
     function _targetLabel() internal pure virtual returns (string memory);
 
-    function _accessManager() internal view returns (address) {
-        return vm.parseJsonAddress(deploymentInputJson, ".accessManager");
-    }
-
     function _readInfra() internal view returns (MakinaXInfra memory) {
         return MakinaXInfra({
+            accessManager: AccessManagerUpgradeable(vm.parseJsonAddress(deploymentOutputJson, ".AccessManager")),
             registry: MakinaXRegistry(vm.parseJsonAddress(deploymentOutputJson, ".MakinaXRegistry")),
             moduleFactory: ModuleFactory(vm.parseJsonAddress(deploymentOutputJson, ".ModuleFactory")),
             makinaXModuleImplem: vm.parseJsonAddress(deploymentOutputJson, ".MakinaXModuleImplem"),
@@ -104,21 +104,16 @@ abstract contract SetupMakinaX is Base, Script {
         }
     }
 
-    /// @dev Concatenates two call batches, preserving order.
-    function _concatCalls(Call[] memory first, Call[] memory second) internal pure returns (Call[] memory calls) {
-        calls = new Call[](first.length + second.length);
-        for (uint256 i; i < first.length; ++i) {
-            calls[i] = first[i];
-        }
-        for (uint256 i; i < second.length; ++i) {
-            calls[first.length + i] = second[i];
+    function _executeCalls(Call[] memory calls) internal {
+        for (uint256 i; i < calls.length; ++i) {
+            Address.functionCall(calls[i].target, calls[i].data);
         }
     }
 
     /// @dev A `schedule` `when` of zero lets the AccessManager queue the operation at the earliest allowed
     ///      time, i.e. once the caller's execution delay has elapsed.
     function _logCalls(Call[] memory calls) internal view {
-        console2.log("AccessManager:", _accessManager());
+        console2.log("AccessManager:", vm.parseJsonAddress(deploymentOutputJson, ".AccessManager"));
 
         for (uint256 i; i < calls.length; ++i) {
             console2.log(_targetLabel(), calls[i].target);

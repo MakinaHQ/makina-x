@@ -8,6 +8,8 @@ abstract contract SaltDomains {
     /// @dev FlashLoanModule is non-upgradeable, so its salt domain is versioned.
     bytes32 internal constant FLASHLOAN_MODULE_SALT_DOMAIN = keccak256("makinax.salt.FlashLoanModule.v1.1.0");
 
+    bytes32 internal constant ACCESS_MANAGER_SALT_DOMAIN = keccak256("makinax.salt.AccessManager");
+
     bytes32 internal constant MAKINA_X_REGISTRY_SALT_DOMAIN = keccak256("makinax.salt.MakinaXRegistry");
 
     bytes32 internal constant MODULE_FACTORY_SALT_DOMAIN = keccak256("makinax.salt.ModuleFactory");

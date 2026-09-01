@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import {
     AccessManagerUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {Constants} from "../utils/Constants.sol";
 import {FlashLoanModule} from "src/flash-loans/FlashLoanModule.sol";
@@ -46,55 +45,29 @@ abstract contract Base_Test is Base, IRCodeReader, Constants, Test {
 
         morpho = new MockMorpho();
 
-        _deployAccessManager(deployer, deployer);
         _deployWeirollVM();
 
         safe = new MockSafe();
 
         MakinaXInfra memory makinaXInfra = deployMakinaXInfra(
-            address(accessManager),
-            weirollVM,
-            FlashLoanProviders({morpho: address(morpho)}),
-            dao,
-            DEFAULT_SWAP_FEE_RATE,
-            false
+            deployer, weirollVM, FlashLoanProviders({morpho: address(morpho)}), dao, DEFAULT_SWAP_FEE_RATE, false
         );
+        accessManager = makinaXInfra.accessManager;
         registry = makinaXInfra.registry;
         moduleFactory = makinaXInfra.moduleFactory;
         makinaXModuleImplem = makinaXInfra.makinaXModuleImplem;
         flashLoanModule = makinaXInfra.flashLoanModule;
 
-        setupMakinaXRegistry(makinaXInfra, dao);
+        setupMakinaXRegistry(makinaXInfra, dao, new uint16[](0), new address[](0));
 
-        setupAccessManagerRoles();
+        setupAccessManagerRoles(
+            accessManager, AMRoleGrant({roleId: 0, account: dao, executionDelay: 0}), new AMRoleGrant[](0), deployer
+        );
     }
 
     ///
     /// INFRA UTILS
     ///
-
-    function setupAccessManagerRoles() internal {
-        // Grant roles to the relevant accounts
-        accessManager.grantRole(accessManager.ADMIN_ROLE(), dao, 0);
-
-        // Revoke roles from the deployer
-        accessManager.revokeRole(accessManager.ADMIN_ROLE(), address(deployer));
-    }
-
-    function _deployAccessManager(address _initialAMAdmin, address _proxyOwner) internal {
-        address implem = _deployCode(type(AccessManagerUpgradeable).creationCode, 0);
-        accessManager = AccessManagerUpgradeable(
-            _deployCode(
-                abi.encodePacked(
-                    type(TransparentUpgradeableProxy).creationCode,
-                    abi.encode(
-                        implem, _proxyOwner, abi.encodeCall(AccessManagerUpgradeable.initialize, (_initialAMAdmin))
-                    )
-                ),
-                0
-            )
-        );
-    }
 
     function _deployWeirollVM() internal {
         weirollVM = _deployCode(getWeirollVMCode(), 0);
