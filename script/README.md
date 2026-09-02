@@ -52,10 +52,6 @@ In production, step 3 is run from an account holding the `INFRA_CONFIG_ROLE`. Se
 
 Set the `INFRA_OUTPUT_FILENAME` (from the infrastructure deployment step, used to read the `ModuleFactory` address), `MODULE_INPUT_FILENAME` and `MODULE_OUTPUT_FILENAME` values in your `.env` file.
 
-### View mode
-
-Set `VIEW_MODE=true` in your `.env` to run either module creation script below without broadcasting: it logs the `ModuleFactory` target address and the calldata it would send, then exits without sending a transaction or writing an output file. Leave the variable unset (or `false`) for normal broadcasting.
-
 ### Standard module instance
 
 Deployed through `ModuleFactory.createModule`, which is a permissioned call. The broadcasting address must have the `STRATEGY_DEPLOYMENT_ROLE` in the `AccessManager`.
@@ -77,3 +73,7 @@ Deployed through `ModuleFactory.createModuleFree`, which is callable by anyone w
 ```
 forge script script/deploy/CreateModuleFree.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
+
+### Production: view mode
+
+In production, a standard module instance is created from an account holding the `STRATEGY_DEPLOYMENT_ROLE`. Set `VIEW_MODE=true` to log the call's target (`ModuleFactory`) and calldata for that account to submit, instead of broadcasting. The calldata is built from the input files only, so no `--rpc-url` or `--account` is needed, and no output file is written (`MODULE_OUTPUT_FILENAME` can be left unset). The setting applies to both scripts above. Leave the variable unset (or `false`) to broadcast.
