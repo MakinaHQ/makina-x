@@ -1,22 +1,43 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+// console logging is used to expose the calls' calldata in view mode
+// solhint-disable no-console
+
+import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
+
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+
 import {ICctpV2BridgeEncoder} from "../../src/interfaces/ICctpV2BridgeEncoder.sol";
 import {ILayerZeroV2BridgeEncoder} from "../../src/interfaces/ILayerZeroV2BridgeEncoder.sol";
 
-import {SetupMakinaX} from "./SetupMakinaX.s.sol";
+import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 
-/// @notice Shared logic to configure the MakinaX bridge encoders on a given chain.
-/// @dev One child contract per chain (see the `bridge-setup/` folder) pins the local chain id via
-///      `_localChainId()`; all cross-chain reference data lives in the single `_chains()` table below.
+/// @notice Configures the MakinaX bridge encoders on the connected chain.
+/// @dev The local chain is detected via `block.chainid` and must be listed in the `_chains()` table
+///      below, which is the single source of truth for cross-chain reference data. Run with the
+///      target chain's `--rpc-url`, including in view mode.
 ///
 ///      For the local chain, this script registers:
 ///        - CCTP V2: the CCTP domain of every other CCTP-supported chain (Ethereum is auto-registered).
-///        - LayerZero V2: the endpoint id of every other LayerZero-supported chain.
+///        - LayerZero V2: the endpoint ID of every other LayerZero-supported chain.
 ///
 ///      Encoder addresses are read from the infra output file (`BridgeEncoders`, keyed by bridge id).
-///      See `SetupMakinaX` for the env vars.
-abstract contract SetupBridgeEncoders is SetupMakinaX {
+///      The resulting privileged calls are either broadcast, or logged in view mode alongside their
+///      `AccessManager.schedule` wrapper.
+///
+/// Env vars:
+///   INFRA_OUTPUT_FILENAME  - infra output file holding the deployed contract addresses
+///                            (under script/deploy/outputs/infra/)
+///   VIEW_MODE (optional)   - if true, logs each call's target + calldata instead of broadcasting
+contract SetupBridgeEncoders is Script, IntegrationIds {
+    struct Call {
+        address target;
+        bytes data;
+    }
+
     struct ChainConfig {
         uint256 chainId;
         string name;
@@ -28,21 +49,46 @@ abstract contract SetupBridgeEncoders is SetupMakinaX {
     /// @dev Ethereum's CCTP domain (0) is auto-registered on the encoder and cannot be set again.
     uint256 internal constant ETHEREUM_CHAIN_ID = 1;
 
-    /// @dev The chain this script runs against. Overridden by each per-chain child contract.
-    function _localChainId() internal pure virtual returns (uint256);
+    address public accessManager;
+    mapping(uint16 bridgeId => address encoder) public bridgeEncoders;
 
-    function _calls() internal view override returns (Call[] memory) {
-        uint256 localChainId = _localChainId();
-        if (!viewMode) {
-            require(block.chainid == localChainId, "wrong chain for --rpc-url");
+    bool public viewMode;
+
+    constructor() {
+        viewMode = vm.envOr("VIEW_MODE", false);
+    }
+
+    /// @dev Test hook to set the AccessManager and the bridge encoders explicitly, instead of having `run` resolve
+    ///      them from the env vars and the infra output file. Takes the arrays returned by `DeployMakinaX.deployment`.
+    function setParams(address _accessManager, uint16[] memory bridgeIds, address[] memory encoders) public {
+        require(bridgeIds.length == encoders.length, "bridge ids / encoders length mismatch");
+
+        accessManager = _accessManager;
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            bridgeEncoders[bridgeIds[i]] = encoders[i];
+        }
+    }
+
+    function run() public {
+        if (accessManager == address(0)) {
+            _loadParamsFromEnv();
         }
 
         ChainConfig[] memory chains = _chains();
-        return _buildCalls(_find(chains, localChainId), chains);
-    }
+        Call[] memory calls = _buildCalls(_find(chains, block.chainid), chains);
 
-    function _targetLabel() internal pure override returns (string memory) {
-        return "Target (BridgeEncoder):";
+        if (viewMode) {
+            _logCalls(calls);
+            return;
+        }
+
+        vm.startBroadcast();
+
+        for (uint256 i; i < calls.length; ++i) {
+            Address.functionCall(calls[i].target, calls[i].data);
+        }
+
+        vm.stopBroadcast();
     }
 
     /// @dev Single source of truth for cross-chain reference data. Edit here to add/adjust chains.
@@ -129,15 +175,28 @@ abstract contract SetupBridgeEncoders is SetupMakinaX {
         }
     }
 
-    /// @dev Looks up a deployed bridge encoder by bridge id in the infra output file.
-    function _encoder(uint16 bridgeId) internal view returns (address) {
-        (uint16[] memory bridgeIds, address[] memory encoders) = _readBridgeEncoders();
-        for (uint256 i; i < bridgeIds.length; ++i) {
-            if (bridgeIds[i] == bridgeId) {
-                return encoders[i];
-            }
-        }
-        revert("bridge encoder not in output");
+    /// @dev Returns the bridge encoder set for the bridge id, reverting if unset.
+    function _encoder(uint16 bridgeId) internal view returns (address encoder) {
+        encoder = bridgeEncoders[bridgeId];
+        require(encoder != address(0), "bridge encoder not set");
+    }
+
+    /// @dev Reads the AccessManager and the bridge encoders from this script's infra output file. Encoders absent
+    ///      from the file are left unset: `_buildCalls` only requires the ones the local chain supports.
+    function _loadParamsFromEnv() internal {
+        string memory outputJson = vm.readFile(
+            string.concat(vm.projectRoot(), "/script/deploy/outputs/infra/", vm.envString("INFRA_OUTPUT_FILENAME"))
+        );
+
+        accessManager = vm.parseJsonAddress(outputJson, ".AccessManager");
+        bridgeEncoders[CCTP_V2_BRIDGE_ID] = _parseEncoder(outputJson, CCTP_V2_BRIDGE_ID);
+        bridgeEncoders[LAYER_ZERO_V2_BRIDGE_ID] = _parseEncoder(outputJson, LAYER_ZERO_V2_BRIDGE_ID);
+    }
+
+    /// @dev Looks up a deployed bridge encoder by bridge id in the infra output file, address(0) if absent.
+    function _parseEncoder(string memory outputJson, uint16 bridgeId) internal view returns (address) {
+        string memory key = string.concat(".BridgeEncoders.", vm.toString(bridgeId));
+        return vm.keyExistsJson(outputJson, key) ? vm.parseJsonAddress(outputJson, key) : address(0);
     }
 
     function _find(ChainConfig[] memory chains, uint256 chainId) internal pure returns (ChainConfig memory) {
@@ -146,6 +205,21 @@ abstract contract SetupBridgeEncoders is SetupMakinaX {
                 return chains[i];
             }
         }
-        revert("local chain not in table");
+        revert(string.concat("unsupported chain id: ", vm.toString(chainId)));
+    }
+
+    function _logCalls(Call[] memory calls) internal view {
+        console2.log("AccessManager:", accessManager);
+
+        for (uint256 i; i < calls.length; ++i) {
+            console2.log("Target (BridgeEncoder):", calls[i].target);
+            console2.log("Calldata:");
+            console2.logBytes(calls[i].data);
+
+            console2.log("AccessManager schedule calldata:");
+            console2.logBytes(abi.encodeCall(IAccessManager.schedule, (calls[i].target, calls[i].data, 0)));
+
+            console2.log("\n");
+        }
     }
 }

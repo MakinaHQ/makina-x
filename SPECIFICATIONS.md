@@ -175,12 +175,12 @@ The MakinaX protocol uses two access control systems:
 
 **Module-level roles** — The `MakinaXGovernable` contract defines four roles: Safe, Provider, Operator, and Guardian. These are implemented as simple address mappings and modifiers. The Safe is the sole authority over configuration. Operators execute strategy actions. Guardians can pause the module. The provider manages service-level parameters and can suspend operations. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
 
-**Infrastructure roles** — The `MakinaXRegistry`, `ModuleFactory`, and Bridge Encoder contracts implement [OpenZeppelin AccessManagedUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol), delegating authorization to an external `AccessManager` instance. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
+**Infrastructure roles** — The `MakinaXRegistry`, `ModuleFactory`, and Bridge Encoder contracts implement [OpenZeppelin AccessManagedUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol), delegating authorization to an `AccessManagerUpgradeable` instance. See [PERMISSIONS.md](PERMISSIONS.md) for the full list of permissions.
 
 Roles used by MakinaX infrastructure contracts are a subset of those used in Makina Core contracts, and are defined as follows:
 
-- `ADMIN_ROLE` - roleId `0` - Super admin of the Access Manager. Authorized to perform Access Manager configuration actions.
-- `INFRA_CONFIG_ROLE` - roleId `1` - Authorized to configure the MakinaX registry, module factory, and bridge encoder contracts.
-- `STRATEGY_DEPLOYMENT_ROLE` - roleId `2` - Authorized to deploy new MakinaX modules.
-- `INFRA_UPGRADE_ROLE` - roleId `6` - Authorized to upgrade proxies of the MakinaX infrastructure contracts.
-- `GUARDIAN_ROLE` - roleId `7` - Authorized to cancel operations scheduled with the other roles.
+- `ADMIN_ROLE` - roleId `0` - Super admin of the access manager. Authorized to perform access manager configuration actions.
+- `INFRA_CONFIG_ROLE` - roleId `1` - Authorized to configure the module factory, bridge encoder contracts and fee collector address.
+- `STRATEGY_DEPLOYMENT_ROLE` - roleId `2` - Authorized to deploy new modules.
+- `INFRA_UPGRADE_ROLE` - roleId `6` - Authorized to upgrade proxies, and to set component addresses (module factory, module implementation, flash loan module, bridge encoders) in the registry.
+- `GUARDIAN_ROLE` - roleId `7` - Authorized to cancel operations scheduled with the other non-super-admin roles.

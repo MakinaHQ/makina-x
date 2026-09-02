@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {
+    AccessManagerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 import {AcrossV4BridgeEncoder} from "../../src/bridge-encoders/AcrossV4BridgeEncoder.sol";
 import {CctpV2BridgeEncoder} from "../../src/bridge-encoders/CctpV2BridgeEncoder.sol";
@@ -14,170 +16,168 @@ import {LayerZeroV2BridgeEncoder} from "../../src/bridge-encoders/LayerZeroV2Bri
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 import {MakinaXModule} from "../../src/MakinaXModule.sol";
 import {MakinaXRegistry} from "../../src/registry/MakinaXRegistry.sol";
+import {IRCodeReader} from "../utils/IRCodeReader.sol";
 import {ProxyUtils} from "../utils/ProxyUtils.sol";
 import {Roles} from "../utils/Roles.sol";
 import {SaltDomains} from "../utils/SaltDomains.sol";
 
-abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
+abstract contract Base is IRCodeReader, ProxyUtils, SaltDomains, IntegrationIds {
     struct MakinaXInfra {
+        AccessManagerUpgradeable accessManager;
         MakinaXRegistry registry;
         ModuleFactory moduleFactory;
         address makinaXModuleImplem;
         FlashLoanModule flashLoanModule;
     }
 
+    struct AMRoleGrant {
+        uint64 roleId;
+        address account;
+        uint32 executionDelay;
+    }
+
     struct FlashLoanProviders {
         address morpho;
     }
 
-    struct Call {
-        address target;
-        bytes data;
-    }
-
     function deployMakinaXInfra(
-        address _accessManager,
-        address _weirollVM,
+        address _initialAMAdmin,
         FlashLoanProviders memory flProviders,
         address _defaultProvider,
         uint256 _defaultSwapFeeRate,
         bool _freeDeployment
     ) internal returns (MakinaXInfra memory deployment) {
-        deployment.registry = _deployMakinaXRegistry(_accessManager, _accessManager);
+        deployment.accessManager = _deployAccessManager(_initialAMAdmin, _initialAMAdmin);
+        address weirollVM = _deployWeirollVM();
+        deployment.registry =
+            _deployMakinaXRegistry(address(deployment.accessManager), address(deployment.accessManager));
         deployment.moduleFactory = _deployModuleFactory(
-            _accessManager,
-            _accessManager,
+            address(deployment.accessManager),
+            address(deployment.accessManager),
             address(deployment.registry),
             _defaultProvider,
             _defaultSwapFeeRate,
             _freeDeployment
         );
-        deployment.makinaXModuleImplem = _deployMakinaXModuleImplem(address(deployment.registry), _weirollVM);
+        deployment.makinaXModuleImplem = _deployMakinaXModuleImplem(address(deployment.registry), weirollVM);
         deployment.flashLoanModule = _deployFlashLoanModule(address(deployment.moduleFactory), flProviders);
     }
 
-    function setupMakinaXRegistry(MakinaXInfra memory deployment, address feeCollector) internal {
-        _executeCalls(_registrySetupCalls(deployment, feeCollector));
+    function setupMakinaXRegistry(
+        MakinaXInfra memory deployment,
+        address feeCollector,
+        uint16[] memory bridgeIds,
+        address[] memory encoders
+    ) internal {
+        require(bridgeIds.length == encoders.length, "bridge encoders length mismatch");
+
+        deployment.registry.setModuleFactory(address(deployment.moduleFactory));
+        deployment.registry.setModuleImplementation(deployment.makinaXModuleImplem);
+        deployment.registry.setFeeCollector(feeCollector);
+        deployment.registry.setFlashLoanModule(address(deployment.flashLoanModule));
+
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            deployment.registry.setBridgeEncoder(bridgeIds[i], encoders[i]);
+        }
     }
 
-    function setupAMFunctionRoles(address accessManager, MakinaXInfra memory deployment) internal {
-        _executeCalls(_amFunctionRoleCalls(accessManager, deployment));
-    }
-
-    ///
-    /// ACCESS MANAGER INFRA UTILS
-    ///
-
-    /// @dev Returns the calls that configure the MakinaXRegistry component addresses.
-    function _registrySetupCalls(MakinaXInfra memory deployment, address feeCollector)
+    function setupAMFunctionRoles(MakinaXInfra memory deployment, uint16[] memory bridgeIds, address[] memory encoders)
         internal
-        pure
-        returns (Call[] memory calls)
     {
-        address registry = address(deployment.registry);
+        require(bridgeIds.length == encoders.length, "bridge encoders length mismatch");
 
-        calls = new Call[](4);
-        calls[0] = Call(registry, abi.encodeCall(MakinaXRegistry.setModuleFactory, (address(deployment.moduleFactory))));
-        calls[1] =
-            Call(registry, abi.encodeCall(MakinaXRegistry.setModuleImplementation, (deployment.makinaXModuleImplem)));
-        calls[2] = Call(registry, abi.encodeCall(MakinaXRegistry.setFeeCollector, (feeCollector)));
-        calls[3] =
-            Call(registry, abi.encodeCall(MakinaXRegistry.setFlashLoanModule, (address(deployment.flashLoanModule))));
-    }
+        AccessManagerUpgradeable accessManager = deployment.accessManager;
 
-    /// @dev Returns the AccessManager calls that assign function roles for the MakinaX infrastructure.
-    function _amFunctionRoleCalls(address accessManager, MakinaXInfra memory deployment)
-        internal
-        view
-        returns (Call[] memory calls)
-    {
         // Transparent Proxy Admins
         bytes4[] memory proxyAdminSelectors = _proxyAdminAMSelectors();
+        accessManager.setTargetFunctionRole(
+            getProxyAdmin(address(accessManager)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
+        );
+        accessManager.setTargetFunctionRole(
+            getProxyAdmin(address(deployment.registry)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
+        );
+        accessManager.setTargetFunctionRole(
+            getProxyAdmin(address(deployment.moduleFactory)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
+        );
 
-        // MakinaXRegistry setters
-        bytes4[] memory registrySetterSelectors = new bytes4[](5);
-        registrySetterSelectors[0] = MakinaXRegistry.setModuleFactory.selector;
-        registrySetterSelectors[1] = MakinaXRegistry.setModuleImplementation.selector;
-        registrySetterSelectors[2] = MakinaXRegistry.setFeeCollector.selector;
-        registrySetterSelectors[3] = MakinaXRegistry.setFlashLoanModule.selector;
-        registrySetterSelectors[4] = MakinaXRegistry.setBridgeEncoder.selector;
+        // MakinaXRegistry component setters
+        bytes4[] memory registryComponentSelectors = new bytes4[](4);
+        registryComponentSelectors[0] = MakinaXRegistry.setModuleFactory.selector;
+        registryComponentSelectors[1] = MakinaXRegistry.setModuleImplementation.selector;
+        registryComponentSelectors[2] = MakinaXRegistry.setFlashLoanModule.selector;
+        registryComponentSelectors[3] = MakinaXRegistry.setBridgeEncoder.selector;
+        accessManager.setTargetFunctionRole(
+            address(deployment.registry), registryComponentSelectors, Roles.INFRA_UPGRADE_ROLE
+        );
 
-        // ModuleFactory deployment selector
+        // MakinaXRegistry fee collector setter
+        bytes4[] memory registryConfigSelectors = new bytes4[](1);
+        registryConfigSelectors[0] = MakinaXRegistry.setFeeCollector.selector;
+        accessManager.setTargetFunctionRole(
+            address(deployment.registry), registryConfigSelectors, Roles.INFRA_CONFIG_ROLE
+        );
+
+        // ModuleFactory deployment functions
         bytes4[] memory factoryDeploySelectors = new bytes4[](2);
         factoryDeploySelectors[0] = ModuleFactory.createModule.selector;
         factoryDeploySelectors[1] = ModuleFactory.setFreeDeployment.selector;
+        accessManager.setTargetFunctionRole(
+            address(deployment.moduleFactory), factoryDeploySelectors, Roles.STRATEGY_DEPLOYMENT_ROLE
+        );
 
         // ModuleFactory config setters
         bytes4[] memory factoryConfigSelectors = new bytes4[](2);
         factoryConfigSelectors[0] = ModuleFactory.setDefaultProvider.selector;
         factoryConfigSelectors[1] = ModuleFactory.setDefaultSwapFeeRate.selector;
+        accessManager.setTargetFunctionRole(
+            address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE
+        );
 
-        calls = new Call[](5);
-        calls[0] = Call(
-            accessManager,
-            abi.encodeCall(
-                IAccessManager.setTargetFunctionRole,
-                (getProxyAdmin(address(deployment.registry)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
-            )
-        );
-        calls[1] = Call(
-            accessManager,
-            abi.encodeCall(
-                IAccessManager.setTargetFunctionRole,
-                (getProxyAdmin(address(deployment.moduleFactory)), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
-            )
-        );
-        calls[2] = Call(
-            accessManager,
-            abi.encodeCall(
-                IAccessManager.setTargetFunctionRole,
-                (address(deployment.registry), registrySetterSelectors, Roles.INFRA_CONFIG_ROLE)
-            )
-        );
-        calls[3] = Call(
-            accessManager,
-            abi.encodeCall(
-                IAccessManager.setTargetFunctionRole,
-                (address(deployment.moduleFactory), factoryDeploySelectors, Roles.STRATEGY_DEPLOYMENT_ROLE)
-            )
-        );
-        calls[4] = Call(
-            accessManager,
-            abi.encodeCall(
-                IAccessManager.setTargetFunctionRole,
-                (address(deployment.moduleFactory), factoryConfigSelectors, Roles.INFRA_CONFIG_ROLE)
-            )
-        );
-    }
-
-    /// @dev Returns the AccessManager calls that assign function roles for the given deployed bridge encoders.
-    function _bridgeEncoderAMFunctionRoleCalls(
-        address accessManager,
-        uint16[] memory bridgeIds,
-        address[] memory encoders
-    ) internal view returns (Call[] memory calls) {
-        require(bridgeIds.length == encoders.length, "bridge encoders length mismatch");
-
-        bytes4[] memory proxyAdminSelectors = _proxyAdminAMSelectors();
-
-        calls = new Call[](2 * bridgeIds.length);
+        // Bridge encoders
         for (uint256 i; i < bridgeIds.length; ++i) {
-            calls[2 * i] = Call(
-                accessManager,
-                abi.encodeCall(
-                    IAccessManager.setTargetFunctionRole,
-                    (getProxyAdmin(encoders[i]), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE)
-                )
+            accessManager.setTargetFunctionRole(
+                getProxyAdmin(encoders[i]), proxyAdminSelectors, Roles.INFRA_UPGRADE_ROLE
             );
-            calls[2 * i + 1] = Call(
-                accessManager,
-                abi.encodeCall(
-                    IAccessManager.setTargetFunctionRole,
-                    (encoders[i], _bridgeEncoderAMSelectors(bridgeIds[i]), Roles.INFRA_CONFIG_ROLE)
-                )
+            accessManager.setTargetFunctionRole(
+                encoders[i], _bridgeEncoderAMSelectors(bridgeIds[i]), Roles.INFRA_CONFIG_ROLE
             );
         }
     }
+
+    function setupAccessManagerRoles(
+        AccessManagerUpgradeable accessManager,
+        AMRoleGrant memory superAdminRoleGrant,
+        AMRoleGrant[] memory otherRoleGrants,
+        address deployer
+    ) internal {
+        uint64 adminRole = accessManager.ADMIN_ROLE();
+
+        // Grant non-super-admin roles
+        for (uint256 i; i < otherRoleGrants.length; ++i) {
+            _grantRole(accessManager, otherRoleGrants[i]);
+        }
+
+        // set guardian role for of all other non-super-admin roles
+        accessManager.setRoleGuardian(Roles.STRATEGY_DEPLOYMENT_ROLE, Roles.GUARDIAN_ROLE);
+        accessManager.setRoleGuardian(Roles.INFRA_CONFIG_ROLE, Roles.GUARDIAN_ROLE);
+        accessManager.setRoleGuardian(Roles.INFRA_UPGRADE_ROLE, Roles.GUARDIAN_ROLE);
+
+        // Grant super admin role
+        _grantRole(accessManager, superAdminRoleGrant);
+
+        // Revoke super admin role from the deployer
+        if (deployer != superAdminRoleGrant.account) {
+            accessManager.revokeRole(adminRole, deployer);
+        }
+    }
+
+    function transferAccessManagerOwnership(AccessManagerUpgradeable accessManager) internal {
+        Ownable(getProxyAdmin(address(accessManager))).transferOwnership(address(accessManager));
+    }
+
+    ///
+    /// ACCESS MANAGER INFRA UTILS
+    ///
 
     function _bridgeEncoderAMSelectors(uint16 bridgeId) internal pure returns (bytes4[] memory selectors) {
         if (bridgeId == ACROSS_V4_BRIDGE_ID) {
@@ -202,15 +202,36 @@ abstract contract Base is ProxyUtils, SaltDomains, IntegrationIds {
         selectors[0] = ProxyAdmin.upgradeAndCall.selector;
     }
 
-    function _executeCalls(Call[] memory calls) internal {
-        for (uint256 i; i < calls.length; ++i) {
-            Address.functionCall(calls[i].target, calls[i].data);
-        }
+    function _grantRole(AccessManagerUpgradeable accessManager, AMRoleGrant memory roleGrant) private {
+        require(roleGrant.account != address(0), "zero roleGrant account address");
+        accessManager.grantRole(roleGrant.roleId, roleGrant.account, roleGrant.executionDelay);
     }
 
     ///
     /// DEPLOYMENT UTILS
     ///
+
+    function _deployAccessManager(address _initialAMAdmin, address _proxyOwner)
+        internal
+        returns (AccessManagerUpgradeable accessManager)
+    {
+        address implem = _deployCode(type(AccessManagerUpgradeable).creationCode, 0);
+        return AccessManagerUpgradeable(
+            _deployCode(
+                abi.encodePacked(
+                    type(TransparentUpgradeableProxy).creationCode,
+                    abi.encode(
+                        implem, _proxyOwner, abi.encodeCall(AccessManagerUpgradeable.initialize, (_initialAMAdmin))
+                    )
+                ),
+                ACCESS_MANAGER_SALT_DOMAIN
+            )
+        );
+    }
+
+    function _deployWeirollVM() internal returns (address weirollVM) {
+        return _deployCode(getWeirollVMCode(), WEIROLL_VM_SALT_DOMAIN);
+    }
 
     function _deployMakinaXRegistry(address _proxyOwner, address _accessManager)
         internal

@@ -58,19 +58,19 @@ Guardians serve as emergency contacts that can halt module operations. The Safe 
 
 ## Infrastructure Roles
 
-The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured by the associated `AccessManager` instance. Roles used by MakinaX infrastructure contracts are a subset of those used in Makina Core, and are assigned at deployment.
+The following contracts use OpenZeppelin's `AccessManagedUpgradeable` with the `restricted` modifier. Function-level permissions are configured at deployment in a dedicated `AccessManager` instance, with role ids mirroring those used in Makina Core.
 
 ### MakinaXRegistry
 
 - `INFRA_CONFIG_ROLE` (roleId `1`)
-  - Can set the address of ModuleFactory.
-  - Can set the address of the module implementation.
   - Can set the address of the fee collector.
-  - Can set the address of the FlashLoanModule.
-  - Can set bridge encoder addresses.
 
 - `INFRA_UPGRADE_ROLE` (roleId `6`)
   - Can upgrade implementation via associated ProxyAdmin.
+  - Can set the address of ModuleFactory.
+  - Can set the address of the module implementation.
+  - Can set the address of the FlashLoanModule.
+  - Can set bridge encoder addresses.
 
 ### ModuleFactory
 

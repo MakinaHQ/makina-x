@@ -1,6 +1,15 @@
 {
-  "accessManager": "0x0000000000000000000000000000000000000000",
-  "weirollVM": "0x0000000000000000000000000000000000000000",
+  "superAdminRoleGrant": {
+    "account": "0x0000000000000000000000000000000000000000",
+    "executionDelay": 0
+  },
+  "otherRoleGrants": [
+    {
+      "roleId": 1,
+      "account": "0x0000000000000000000000000000000000000000",
+      "executionDelay": 0
+    }
+  ],
   "feeCollector": "0x0000000000000000000000000000000000000000",
   "defaultProvider": "0x0000000000000000000000000000000000000000",
   "defaultSwapFeeRate": 0,
@@ -10,8 +19,7 @@
   },
   "bridgesTargets": [
     {
-      "bridgeId": 0,
-      "bridgeRouter": "0x0000000000000000000000000000000000000000"
+      "bridgeId": 0
     }
   ]
 }

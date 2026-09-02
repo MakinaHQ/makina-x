@@ -1,0 +1,12 @@
+{
+  "safe": "0x0000000000000000000000000000000000005aFE",
+  "initialOperatingMode": 2,
+  "initialAllowedInstrRoot": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "initialMaxPositionIncreaseLossBps": 100,
+  "initialMaxPositionDecreaseLossBps": 1000,
+  "initialInstrCooldownDuration": 10,
+  "initialMaxSwapLossBps": 200,
+  "initialSwapCooldownDuration": 20,
+  "salt": "0x0000000000000000000000000000000000000000000000000000000000000001",
+  "referralKey": "0x0000000000000000000000000000000000000000000000000000000000000000"
+}
