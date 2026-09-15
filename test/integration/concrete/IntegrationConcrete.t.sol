@@ -12,11 +12,10 @@ import {MockERC4626} from "test/mocks/MockERC4626.sol";
 import {MockDex} from "test/mocks/MockDex.sol";
 import {MockPriceFeed} from "test/mocks/MockPriceFeed.sol";
 import {MockSupplyModule} from "test/mocks/MockSupplyModule.sol";
-import {VMInstructionHelper} from "test/utils/VMInstructionHelper.sol";
 
 import {Base_Test} from "../../base/Base.t.sol";
 
-abstract contract Integration_Concrete_Test is Base_Test, VMInstructionHelper {
+abstract contract Integration_Concrete_Test is Base_Test {
     /// @dev A denotes tokenA, B denotes tokenB
     /// and E is the reference currency of the oracle registry.
     uint256 internal constant PRICE_A_E = 150;

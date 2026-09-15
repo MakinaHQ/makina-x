@@ -18,17 +18,20 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         uint256 flashLoanAmount = 1e18;
         deal(address(token), address(morpho), 2 * flashLoanAmount, true);
 
-        IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
-        IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
-            LOOP_POS_ID,
-            address(flashLoanModule),
-            address(makinaXModule),
-            address(token),
-            flashLoanAmount,
-            flMgmtInstruction
+        IWeirollComponent.Instruction memory flMgmtInstruction =
+            _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
+        IWeirollComponent.Instruction memory mgmtInstruction = _withProof(
+            _buildFlashLoanModuleDummyLoopInstruction(
+                LOOP_POS_ID,
+                address(flashLoanModule),
+                address(makinaXModule),
+                address(token),
+                flashLoanAmount,
+                flMgmtInstruction
+            )
         );
         IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
+            _withProof(_buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID));
 
         morpho.setReentrancyMode(true);
 
@@ -58,18 +61,21 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         uint256 flashLoanAmount = 1e18;
         deal(address(token), address(morpho), flashLoanAmount, true);
 
-        IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
+        IWeirollComponent.Instruction memory flMgmtInstruction =
+            _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
         flMgmtInstruction.instructionType = IWeirollComponent.InstructionType.MANAGEMENT;
-        IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
-            LOOP_POS_ID,
-            address(flashLoanModule),
-            address(makinaXModule),
-            address(token),
-            flashLoanAmount,
-            flMgmtInstruction
+        IWeirollComponent.Instruction memory mgmtInstruction = _withProof(
+            _buildFlashLoanModuleDummyLoopInstruction(
+                LOOP_POS_ID,
+                address(flashLoanModule),
+                address(makinaXModule),
+                address(token),
+                flashLoanAmount,
+                flMgmtInstruction
+            )
         );
         IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
+            _withProof(_buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID));
 
         vm.expectRevert(
             abi.encodeWithSelector(VM.ExecutionFailed.selector, 0, address(flashLoanModule), string("Unknown"))
@@ -88,23 +94,27 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
             abi.encodeWithSelector(VM.ExecutionFailed.selector, 0, address(flashLoanModule), string("Unknown"));
 
         // instructions have different positionId
-        IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID + 1);
-        IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
-            LOOP_POS_ID,
-            address(flashLoanModule),
-            address(makinaXModule),
-            address(token),
-            flashLoanAmount,
-            flMgmtInstruction
+        IWeirollComponent.Instruction memory flMgmtInstruction =
+            _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
+        flMgmtInstruction.positionId = LOOP_POS_ID + 1;
+        IWeirollComponent.Instruction memory mgmtInstruction = _withProof(
+            _buildFlashLoanModuleDummyLoopInstruction(
+                LOOP_POS_ID,
+                address(flashLoanModule),
+                address(makinaXModule),
+                address(token),
+                flashLoanAmount,
+                flMgmtInstruction
+            )
         );
         IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
+            _withProof(_buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID));
         vm.expectRevert(errorData);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // instructions have different isDebt flag
-        flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
+        flMgmtInstruction = _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
         flMgmtInstruction.isDebt = true;
         vm.expectRevert(errorData);
         vm.prank(operator);
@@ -112,7 +122,8 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
     }
 
     function test_RevertWhen_InstructionsAreDebt() public {
-        IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
+        IWeirollComponent.Instruction memory flMgmtInstruction =
+            _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
         flMgmtInstruction.isDebt = true;
 
         // overwrite IS_MANAGED_POSITION_DEBT_SLOT and MANAGED_POSITION_ID_SLOT transient slots, then call
@@ -137,17 +148,20 @@ contract ManageFlashLoan_Integration_Concrete_Test is WeirollComponent_Integrati
         uint256 flashLoanAmount = 3e18;
         deal(address(token), address(morpho), flashLoanAmount, true);
 
-        IWeirollComponent.Instruction memory flMgmtInstruction = _buildManageFlashLoanDummyInstruction(LOOP_POS_ID);
-        IWeirollComponent.Instruction memory mgmtInstruction = _buildFlashLoanModuleDummyLoopInstruction(
-            LOOP_POS_ID,
-            address(flashLoanModule),
-            address(makinaXModule),
-            address(token),
-            flashLoanAmount,
-            flMgmtInstruction
+        IWeirollComponent.Instruction memory flMgmtInstruction =
+            _withProof(_buildManageFlashLoanDummyInstruction(LOOP_POS_ID));
+        IWeirollComponent.Instruction memory mgmtInstruction = _withProof(
+            _buildFlashLoanModuleDummyLoopInstruction(
+                LOOP_POS_ID,
+                address(flashLoanModule),
+                address(makinaXModule),
+                address(token),
+                flashLoanAmount,
+                flMgmtInstruction
+            )
         );
         IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID);
+            _withProof(_buildMockFlashLoanModuleDummyAccountingInstruction(LOOP_POS_ID));
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
