@@ -4,14 +4,15 @@ pragma solidity 0.8.35;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
-import {IFlashLoanModule} from "src/interfaces/IFlashLoanModule.sol";
+import {IFlashLoanModule} from "../../src/interfaces/IFlashLoanModule.sol";
 import {IWeirollComponent} from "../../src/interfaces/IWeirollComponent.sol";
-import {MerkleProofHelper} from "./MerkleProofHelper.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockBorrowModule} from "../mocks/MockBorrowModule.sol";
 import {MockSupplyModule} from "../mocks/MockSupplyModule.sol";
 
-abstract contract VMInstructionHelper is MerkleProofHelper {
+/// @dev Builders for the Weiroll instructions run against the mock contracts. Proofs are left empty: the leaf
+///      hash does not depend on them, so the same builders serve to build the tree and to run instructions.
+abstract contract InstructionHelper {
     bytes32 internal constant ACCOUNTING_OUTPUT_STATE_END_OF_ARGS = bytes32(type(uint256).max);
 
     function _buildCommand(bytes4 _selector, bytes1 _flags, bytes6 _input, bytes1 _output, address _target)
@@ -59,8 +60,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[1] = abi.encode(_assets);
         state[2] = abi.encode(_safe);
 
-        bytes32[] memory merkleProof = _getDeposit4626InstrProof();
-
         uint128 stateBitmap = 0xa0000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -73,7 +72,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -102,8 +101,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
 
         uint128 stateBitmap = 0x60000000000000000000000000000000;
 
-        bytes32[] memory merkleProof = _getRedeem4626InstrProof();
-
         return IWeirollComponent.Instruction(
             _posId,
             false,
@@ -114,7 +111,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -161,8 +158,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
 
         uint128 stateBitmap = 0x20000000000000000000000000000000;
 
-        bytes32[] memory merkleProof = _getAccounting4626InstrProof();
-
         return IWeirollComponent.Instruction(
             _posId,
             false,
@@ -173,7 +168,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -207,8 +202,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[0] = abi.encode(_supplyModule);
         state[1] = abi.encode(_assets);
 
-        bytes32[] memory merkleProof = _getSupplyMockSupplyModuleInstrProof();
-
         uint128 stateBitmap = 0x80000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -221,7 +214,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -246,8 +239,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         bytes[] memory state = new bytes[](1);
         state[0] = abi.encode(_assets);
 
-        bytes32[] memory merkleProof = _getWithdrawMockSupplyModuleInstrProof();
-
         uint128 stateBitmap = 0x00000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -260,7 +251,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -289,8 +280,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[0] = abi.encode(_safe);
         state[1] = abi.encode(ACCOUNTING_OUTPUT_STATE_END_OF_ARGS);
 
-        bytes32[] memory merkleProof = _getAccountingMockSupplyModuleInstrProof();
-
         uint128 stateBitmap = 0x80000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -303,7 +292,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -328,8 +317,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         bytes[] memory state = new bytes[](1);
         state[0] = abi.encode(_assets);
 
-        bytes32[] memory merkleProof = _getBorrowMockBorrowModuleInstrProof();
-
         uint128 stateBitmap = 0x00000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -342,7 +329,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -376,8 +363,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[0] = abi.encode(_borrowModule);
         state[1] = abi.encode(_assets);
 
-        bytes32[] memory merkleProof = _getRepayMockBorrowModuleInstrProof();
-
         uint128 stateBitmap = 0x80000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -390,7 +375,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -419,8 +404,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[0] = abi.encode(_safe);
         state[1] = abi.encode(ACCOUNTING_OUTPUT_STATE_END_OF_ARGS);
 
-        bytes32[] memory merkleProof = _getAccountingMockBorrowModuleInstrProof();
-
         uint128 stateBitmap = 0x80000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -433,13 +416,13 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
     function _buildMockRewardTokenHarvestInstruction(address _safe, address _mockRewardToken, uint256 _harvestAmount)
         internal
-        view
+        pure
         returns (IWeirollComponent.Instruction memory)
     {
         bytes32[] memory commands = new bytes32[](1);
@@ -456,8 +439,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         state[0] = abi.encode(_safe);
         state[1] = abi.encode(_harvestAmount);
 
-        bytes32[] memory merkleProof = _getHarvestMockTokenAInstrProof();
-
         uint128 stateBitmap = 0x80000000000000000000000000000000;
 
         return IWeirollComponent.Instruction(
@@ -470,7 +451,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             stateBitmap,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
@@ -481,7 +462,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
         address _token,
         uint256 _amount,
         IWeirollComponent.Instruction memory _manageFlashloanInstruction
-    ) internal view returns (IWeirollComponent.Instruction memory) {
+    ) internal pure returns (IWeirollComponent.Instruction memory) {
         bytes32[] memory commands = new bytes32[](1);
         // "0xb1485fa00180ffffffffffff" + _flashLoanModule
         commands[0] = _buildCommand(
@@ -509,8 +490,6 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             flashLoanRequest.amount
         );
 
-        bytes32[] memory merkleProof = _getDummyLoopMockFlashLoanModuleInstrProof();
-
         return IWeirollComponent.Instruction(
             _posId,
             false,
@@ -521,19 +500,17 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             commands,
             state,
             0,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
     function _buildMockFlashLoanModuleDummyAccountingInstruction(uint256 _posId)
         internal
-        view
+        pure
         returns (IWeirollComponent.Instruction memory)
     {
         bytes[] memory state = new bytes[](1);
         state[0] = abi.encode(ACCOUNTING_OUTPUT_STATE_END_OF_ARGS);
-
-        bytes32[] memory merkleProof = _getAccountingMockFlashLoanModuleInstrProof();
 
         return IWeirollComponent.Instruction(
             _posId,
@@ -545,17 +522,15 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             new bytes32[](0),
             state,
             0,
-            merkleProof
+            new bytes32[](0)
         );
     }
 
     function _buildManageFlashLoanDummyInstruction(uint256 _posId)
         internal
-        view
+        pure
         returns (IWeirollComponent.Instruction memory)
     {
-        bytes32[] memory merkleProof = _getManageFlashLoanDummyInstrProof();
-
         return IWeirollComponent.Instruction(
             _posId,
             false,
@@ -566,7 +541,7 @@ abstract contract VMInstructionHelper is MerkleProofHelper {
             new bytes32[](0),
             new bytes[](0),
             0,
-            merkleProof
+            new bytes32[](0)
         );
     }
 }

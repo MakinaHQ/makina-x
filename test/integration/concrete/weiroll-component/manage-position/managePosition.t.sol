@@ -18,9 +18,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 3e18, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         tokenB.scheduleReenter(
             MockERC20.Type.Before,
@@ -67,9 +67,11 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertWhen_PositionIdZero() public {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), 0, address(vault), 0);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), 0, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
+        mgmtInstruction.positionId = 0;
+        acctInstruction.positionId = 0;
         vm.prank(operator);
         vm.expectRevert(Errors.ZeroPositionId.selector);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -77,7 +79,7 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertWhen_ProvidedFirstInstructionNonManagementType() public {
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.prank(operator);
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         makinaXModule.managePosition(acctInstruction, acctInstruction);
@@ -90,21 +92,26 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         MockERC4626 vault2 = new MockERC4626("Vault2", "VLT2", IERC20(tokenB), 0);
         IWeirollComponent.Instruction memory mgmtInstruction =
             _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault2), inputAmount);
+        mgmtInstruction.merkleProof =
+            _proofOf(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong posId
-        mgmtInstruction = _build4626DepositInstruction(address(safe), SUPPLY_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
+        mgmtInstruction.positionId = SUPPLY_POS_ID;
         acctInstruction.positionId = SUPPLY_POS_ID;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong isDebt
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.isDebt = true;
         acctInstruction.isDebt = true;
         acctInstruction.positionId = VAULT_POS_ID;
@@ -113,7 +120,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong groupId
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.groupId = 1;
         acctInstruction.isDebt = false;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
@@ -121,35 +129,40 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong affected tokens list
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.affectedTokens[0] = address(0);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong position tokens list
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.positionTokens = new address[](1);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong commands
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.commands[1] = mgmtInstruction.commands[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong state
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.state[2] = mgmtInstruction.state[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong bitmap
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         mgmtInstruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
@@ -158,7 +171,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // use new root
         vm.prank(address(safe));
         makinaXModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
-        mgmtInstruction = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -169,9 +183,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
         // instructions have different positionId
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), SUPPLY_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
+        acctInstruction.positionId = SUPPLY_POS_ID;
         vm.expectRevert(Errors.InstructionsMismatch.selector);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
@@ -184,7 +199,7 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertWhen_ProvidedSecondInstructionNonAccountingType() public {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         vm.prank(operator);
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         makinaXModule.managePosition(mgmtInstruction, mgmtInstruction);
@@ -194,43 +209,45 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // use wrong vault
         MockERC4626 vault2 = new MockERC4626("Vault2", "VLT2", IERC20(tokenB), 0);
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault2));
+        acctInstruction.merkleProof =
+            _proofOf(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong affected tokens list
-        acctInstruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         acctInstruction.affectedTokens[0] = address(0);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong position tokens list
-        acctInstruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         acctInstruction.positionTokens[0] = address(0);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong commands
-        acctInstruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         delete acctInstruction.commands[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong state
-        acctInstruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         delete acctInstruction.state[2];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
         // use wrong bitmap
-        acctInstruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         acctInstruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
@@ -241,9 +258,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         vault.setAccountingDisabled(true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert();
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -251,9 +268,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertGiven_AccountingOutputStateInvalid() public {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         // replace end flag with null value in accounting output state
         delete acctInstruction.state[1];
@@ -264,9 +281,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertWhen_AffectedTokensInvalid() public {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         vm.prank(address(safe));
         makinaXModule.clearFeedRoute(address(tokenB));
@@ -278,9 +295,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertGiven_ProvidedFirstInstructionFails() public {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 3e18));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert();
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -341,7 +358,7 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
 
         // empty instruction
         IWeirollComponent.Instruction memory acctInstruction;
@@ -371,7 +388,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         assertEq(change, 0);
 
         uint256 sharesToRedeem = vault.balanceOf(address(safe)) / 2;
-        mgmtInstruction = _build4626RedeemInstruction(address(safe), VAULT_POS_ID, address(vault), sharesToRedeem);
+        mgmtInstruction =
+            _withProof(_build4626RedeemInstruction(address(safe), VAULT_POS_ID, address(vault), sharesToRedeem));
 
         expectedShares -= sharesToRedeem;
 
@@ -407,9 +425,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -418,7 +437,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // trigger faulty mode in supplyModule
         supplyModule.setFaultyMode(true);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -431,9 +451,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -442,7 +463,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // trigger faulty mode in borrowModule
         borrowModule.setFaultyMode(true);
 
-        mgmtInstruction = _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
 
         // try increase position
         vm.prank(operator);
@@ -456,15 +478,16 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), 0);
+        mgmtInstruction = _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), 0));
 
         // try neutral move
         vm.prank(operator);
@@ -478,15 +501,16 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
-        mgmtInstruction = _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), 0);
+        mgmtInstruction = _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), 0));
 
         // try neutral move
         vm.prank(operator);
@@ -499,7 +523,7 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_ManagePosition_AccountingInstructionNotEnforced_WhileInFencedMode() public whileInFencedMode {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0));
 
         IWeirollComponent.Instruction memory acctInstruction;
 
@@ -515,9 +539,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         vm.startPrank(operator);
 
@@ -537,9 +562,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -562,9 +588,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         supplyModule.setRateBps(10_000 - DEFAULT_MAX_POS_INCREASE_LOSS_BPS - 1);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // execute instruction with value loss above the limit
         vm.prank(operator);
@@ -573,7 +600,7 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
 
     function test_RevertWhen_NoAccountingInstructionProvided_WhileInWalledMode() public whileInWalledMode {
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0));
 
         IWeirollComponent.Instruction memory acctInstruction;
 
@@ -588,9 +615,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 3 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // execute instruction while in open mode
         vm.prank(operator);
@@ -617,9 +645,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -641,9 +670,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -652,7 +682,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // trigger faulty mode in borrowModule
         borrowModule.setFaultyMode(true);
 
-        mgmtInstruction = _buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
 
         // try repay debt
         vm.prank(operator);
@@ -670,9 +701,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         supplyModule.setRateBps(10_000 - DEFAULT_MAX_POS_INCREASE_LOSS_BPS - 1);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // try create position
         vm.prank(operator);
@@ -690,9 +722,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         borrowModule.setRateBps(10_000 + DEFAULT_MAX_POS_INCREASE_LOSS_BPS + 1);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // try create position
         vm.prank(operator);
@@ -707,9 +740,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -718,7 +752,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // increase supplyModule rate
         supplyModule.setRateBps(10_000 + DEFAULT_MAX_POS_DECREASE_LOSS_BPS + 1);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
 
         // try decrease position
         vm.prank(operator);
@@ -739,9 +774,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -749,7 +785,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // decrease borrowModule rate
         borrowModule.setRateBps(10_000 - DEFAULT_MAX_POS_DECREASE_LOSS_BPS - 1);
 
-        mgmtInstruction = _buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
 
         vm.prank(operator);
         vm.expectRevert(Errors.MaxValueLossExceeded.selector);
@@ -835,9 +872,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -846,7 +884,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // trigger faulty mode in supplyModule
         supplyModule.setFaultyMode(true);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -859,9 +898,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         vm.prank(operator);
@@ -870,7 +910,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         // trigger faulty mode in borrowModule
         borrowModule.setFaultyMode(true);
 
-        mgmtInstruction = _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
 
         // try increase position
         vm.prank(operator);
@@ -884,15 +925,16 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), 0);
+        mgmtInstruction = _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), 0));
 
         // try neutral move
         vm.prank(operator);
@@ -906,15 +948,16 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
 
-        mgmtInstruction = _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), 0);
+        mgmtInstruction = _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), 0));
 
         // try neutral move
         vm.prank(operator);
@@ -931,9 +974,9 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         // create position
         uint256 expectedShares = vault.previewDeposit(inputAmount);
@@ -964,7 +1007,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         assertEq(uint256(change), inputAmount * priceTokenBInAccountingCurrency);
 
         uint256 sharesToRedeem = vault.balanceOf(address(safe)) / 2;
-        mgmtInstruction = _build4626RedeemInstruction(address(safe), VAULT_POS_ID, address(vault), sharesToRedeem);
+        mgmtInstruction =
+            _withProof(_build4626RedeemInstruction(address(safe), VAULT_POS_ID, address(vault), sharesToRedeem));
 
         // decrease position
         expectedShares -= sharesToRedeem;
@@ -1003,9 +1047,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(safe), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+            _withProof(_buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
 
         // create position
         uint256 expectedValue = inputAmount * priceTokenBInAccountingCurrency;
@@ -1033,7 +1078,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         assertEq(value, expectedValue);
         assertEq(uint256(change), inputAmount * priceTokenBInAccountingCurrency);
 
-        mgmtInstruction = _buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockSupplyModuleWithdrawInstruction(SUPPLY_POS_ID, address(supplyModule), inputAmount));
 
         // decrease position
         expectedValue -= inputAmount * priceTokenBInAccountingCurrency;
@@ -1070,9 +1116,10 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         deal(address(tokenB), address(borrowModule), 2 * inputAmount, true);
 
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
-        IWeirollComponent.Instruction memory acctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+            _withProof(_buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
+        IWeirollComponent.Instruction memory acctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         // create position
         uint256 expectedValue = inputAmount * priceTokenBInAccountingCurrency;
@@ -1100,7 +1147,8 @@ contract ManagePosition_Integration_Concrete_Test is WeirollComponent_Integratio
         assertEq(value, expectedValue);
         assertEq(uint256(change), inputAmount * priceTokenBInAccountingCurrency);
 
-        mgmtInstruction = _buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount);
+        mgmtInstruction =
+            _withProof(_buildMockBorrowModuleRepayInstruction(BORROW_POS_ID, address(borrowModule), inputAmount));
 
         // decrease position
         expectedValue -= inputAmount * priceTokenBInAccountingCurrency;
