@@ -7,10 +7,10 @@ import {CctpV2BridgeEncoder_Unit_Concrete_Test} from "../CctpV2BridgeEncoder.t.s
 
 contract GetCctpDomain_Unit_Concrete_Test is CctpV2BridgeEncoder_Unit_Concrete_Test {
     function test_RevertWhen_EvmChainIdNotRegistered() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.CctpDomainNotRegistered.selector, 0));
+        vm.expectRevert(Errors.CctpDomainNotRegistered.selector);
         cctpV2BridgeEncoder.getCctpDomain(0);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CctpDomainNotRegistered.selector, 2));
+        vm.expectRevert(Errors.CctpDomainNotRegistered.selector);
         cctpV2BridgeEncoder.getCctpDomain(2);
     }
 

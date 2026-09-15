@@ -7,10 +7,10 @@ import {LayerZeroV2BridgeEncoder_Unit_Concrete_Test} from "../LayerZeroV2BridgeE
 
 contract GetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Concrete_Test {
     function test_RevertWhen_EvmChainIdNotRegistered() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.LzEndpointIdNotRegistered.selector, 0));
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getLzEndpointId(0);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.LzEndpointIdNotRegistered.selector, 1));
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getLzEndpointId(1);
     }
 

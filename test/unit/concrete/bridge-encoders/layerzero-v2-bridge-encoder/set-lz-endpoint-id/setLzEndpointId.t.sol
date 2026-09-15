@@ -35,7 +35,7 @@ contract SetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Con
 
         assertEq(layerZeroV2BridgeEncoder.getLzEndpointId(1), 2);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.LzEndpointIdNotRegistered.selector, 2));
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getLzEndpointId(2);
     }
 
@@ -60,7 +60,7 @@ contract SetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Con
 
         assertEq(layerZeroV2BridgeEncoder.getLzEndpointId(1), 2);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.LzEndpointIdNotRegistered.selector, 2));
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getLzEndpointId(2);
     }
 
@@ -75,7 +75,7 @@ contract SetLzEndpointId_Unit_Concrete_Test is LayerZeroV2BridgeEncoder_Unit_Con
 
         assertEq(layerZeroV2BridgeEncoder.getLzEndpointId(2), 1);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.LzEndpointIdNotRegistered.selector, 1));
+        vm.expectRevert(Errors.LzEndpointIdNotRegistered.selector);
         layerZeroV2BridgeEncoder.getLzEndpointId(1);
     }
 }
