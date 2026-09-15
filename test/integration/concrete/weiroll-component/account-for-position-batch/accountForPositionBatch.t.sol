@@ -17,9 +17,9 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
 
         // create vault position
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), vaultInputAmount);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), vaultInputAmount));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -28,10 +28,12 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
     function test_RevertWhen_ReentrantCall() public {
         uint256 borrowInputAmount = 1e18;
         deal(address(tokenB), address(borrowModule), borrowInputAmount, true);
-        IWeirollComponent.Instruction memory borrowMgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount);
-        IWeirollComponent.Instruction memory borrowAcctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+        IWeirollComponent.Instruction memory borrowMgmtInstruction = _withProof(
+            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount)
+        );
+        IWeirollComponent.Instruction memory borrowAcctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         tokenB.scheduleReenter(
             MockERC20.Type.Before,
@@ -75,20 +77,24 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
         // create supply position
         uint256 supplyInputAmount = 2e18;
         deal(address(tokenB), address(safe), supplyInputAmount, true);
-        IWeirollComponent.Instruction memory supplyMgmtInstruction =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), supplyInputAmount);
-        IWeirollComponent.Instruction memory supplyAcctInstruction =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
+        IWeirollComponent.Instruction memory supplyMgmtInstruction = _withProof(
+            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), supplyInputAmount)
+        );
+        IWeirollComponent.Instruction memory supplyAcctInstruction = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
         vm.prank(operator);
         makinaXModule.managePosition(supplyMgmtInstruction, supplyAcctInstruction);
 
         // create borrow position
         uint256 borrowInputAmount = 1e18;
         deal(address(tokenB), address(borrowModule), borrowInputAmount, true);
-        IWeirollComponent.Instruction memory borrowMgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount);
-        IWeirollComponent.Instruction memory borrowAcctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+        IWeirollComponent.Instruction memory borrowMgmtInstruction = _withProof(
+            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount)
+        );
+        IWeirollComponent.Instruction memory borrowAcctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
         vm.prank(operator);
         makinaXModule.managePosition(borrowMgmtInstruction, borrowAcctInstruction);
 
