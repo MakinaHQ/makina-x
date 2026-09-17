@@ -89,7 +89,7 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
 
     /// @dev Single source of truth for cross-chain reference data. Edit here to add/adjust chains.
     function _chains() internal pure returns (ChainConfig[] memory chains) {
-        chains = new ChainConfig[](13);
+        chains = new ChainConfig[](15);
 
         // Ethereum Mainnet
         chains[0] = ChainConfig({chainId: 1, name: "Ethereum", cctpDomain: 0, cctpSupported: true, lzEid: 30101});
@@ -127,8 +127,14 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
         // Robinhood Chain (no CCTP: LayerZero routes only)
         chains[11] = ChainConfig({chainId: 4663, name: "Robinhood", cctpDomain: 0, cctpSupported: false, lzEid: 30416});
 
-        // Plasma (no CCTP: LayerZero routes only)
-        chains[12] = ChainConfig({chainId: 9745, name: "Plasma", cctpDomain: 0, cctpSupported: false, lzEid: 30383});
+        // Plasma
+        chains[12] = ChainConfig({chainId: 9745, name: "Plasma", cctpDomain: 33, cctpSupported: true, lzEid: 30383});
+
+        // Arc (Circle)
+        chains[13] = ChainConfig({chainId: 5042, name: "Arc", cctpDomain: 26, cctpSupported: true, lzEid: 30417});
+
+        // Tempo (no CCTP: LayerZero routes only)
+        chains[14] = ChainConfig({chainId: 4217, name: "Tempo", cctpDomain: 0, cctpSupported: false, lzEid: 30410});
     }
 
     /// @dev Builds the encoder registration calls for the local chain against every other chain.
