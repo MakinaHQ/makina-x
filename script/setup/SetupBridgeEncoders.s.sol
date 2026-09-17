@@ -28,6 +28,10 @@ import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 ///      The resulting privileged calls are either broadcast, or logged in view mode alongside their
 ///      `AccessManager.schedule` wrapper.
 ///
+///      Registrations already onchain with the expected value are skipped, so the script can be rerun on an
+///      already configured chain (e.g. after adding a chain to the table) and only emits the missing or
+///      outdated ones.
+///
 /// Env vars:
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the deployed contract addresses
 ///                            (under script/deploy/outputs/infra/)
@@ -76,6 +80,11 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
 
         ChainConfig[] memory chains = _chains();
         Call[] memory calls = _buildCalls(_find(chains, block.chainid), chains);
+
+        if (calls.length == 0) {
+            console2.log("Bridge encoders already configured, nothing to do");
+            return;
+        }
 
         if (viewMode) {
             _logCalls(calls);
@@ -141,7 +150,8 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
         chains[14] = ChainConfig({chainId: 4217, name: "Tempo", cctpDomain: 0, cctpSupported: false, lzEid: 30410});
     }
 
-    /// @dev Builds the encoder registration calls for the local chain against every other chain.
+    /// @dev Builds the encoder registration calls for the local chain against every other chain, skipping the
+    ///      registrations already onchain with the expected value.
     function _buildCalls(ChainConfig memory local, ChainConfig[] memory chains)
         internal
         view
@@ -161,14 +171,18 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
             }
 
             // CCTP V2: register the foreign domain (Ethereum's domain 0 is auto-registered / protected).
-            if (local.cctpSupported && f.cctpSupported && f.chainId != ETHEREUM_CHAIN_ID) {
-                calls[k] =
-                    Call(cctpEncoder, abi.encodeCall(ICctpV2BridgeEncoder.setCctpDomain, (f.chainId, f.cctpDomain)));
+            if (
+                local.cctpSupported && f.cctpSupported && f.chainId != ETHEREUM_CHAIN_ID
+                    && !_isCctpDomainSet(cctpEncoder, f.chainId, f.cctpDomain)
+            ) {
+                calls[k] = Call(
+                    cctpEncoder, abi.encodeCall(ICctpV2BridgeEncoder.setCctpDomain, (f.chainId, f.cctpDomain))
+                );
                 ++k;
             }
 
             // LayerZero V2: register the foreign endpoint id.
-            if (local.lzEid != 0 && f.lzEid != 0) {
+            if (local.lzEid != 0 && f.lzEid != 0 && !_isLzEndpointIdSet(lzEncoder, f.chainId, f.lzEid)) {
                 calls[k] =
                     Call(lzEncoder, abi.encodeCall(ILayerZeroV2BridgeEncoder.setLzEndpointId, (f.chainId, f.lzEid)));
                 ++k;
@@ -178,6 +192,26 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
         // Resize the array to the actual number of calls.
         assembly {
             mstore(calls, k)
+        }
+    }
+
+    /// @dev Whether the CCTP domain registered onchain for the chain id already matches the expected one.
+    ///      The getter reverts when the chain id is unregistered.
+    function _isCctpDomainSet(address encoder, uint256 chainId, uint32 cctpDomain) internal view returns (bool) {
+        try ICctpV2BridgeEncoder(encoder).getCctpDomain(chainId) returns (uint32 current) {
+            return current == cctpDomain;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @dev Whether the LayerZero endpoint id registered onchain for the chain id already matches the expected one.
+    ///      The getter reverts when the chain id is unregistered.
+    function _isLzEndpointIdSet(address encoder, uint256 chainId, uint32 lzEid) internal view returns (bool) {
+        try ILayerZeroV2BridgeEncoder(encoder).getLzEndpointId(chainId) returns (uint32 current) {
+            return current == lzEid;
+        } catch {
+            return false;
         }
     }
 

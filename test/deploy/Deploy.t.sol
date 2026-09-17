@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+import {Vm} from "forge-std/Vm.sol";
+
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
@@ -255,6 +257,23 @@ contract Deploy_Scripts_Test is Base_Test {
         // LayerZero endpoint ids of foreign chains are registered
         assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(42161), 30110);
         assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(4663), 30416);
+
+        // Rerunning on an already configured chain registers nothing
+        vm.recordLogs();
+        setupBridgeEncoders.run();
+        assertEq(vm.getRecordedLogs().length, 0);
+
+        // A registration whose onchain value differs from the table is corrected, and nothing else is touched
+        vm.prank(deployMakinaX.deployer());
+        ICctpV2BridgeEncoder(cctpEncoder).setCctpDomain(42161, 99);
+
+        vm.recordLogs();
+        setupBridgeEncoders.run();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(logs.length, 1);
+        assertEq(logs[0].emitter, cctpEncoder);
+        assertEq(logs[0].topics[0], ICctpV2BridgeEncoder.CctpDomainRegistered.selector);
+        assertEq(ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(42161), 3);
     }
 
     function _assertModuleSetup(IMakinaXModule module, MakinaXInfra memory infra, string memory inputJson)
