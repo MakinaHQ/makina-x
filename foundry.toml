@@ -32,6 +32,8 @@ plasma = "${PLASMA_RPC_URL}"
 robinhood = "${ROBINHOOD_RPC_URL}"
 hyper_evm = "${HYPER_EVM_RPC_URL}"
 polygon = "${POLYGON_RPC_URL}"
+arc = "${ARC_RPC_URL}"
+tempo = "${TEMPO_RPC_URL}"
 
 [etherscan]
 1 = { key = "${MAINNET_ETHERSCAN_API_KEY}", url = "${MAINNET_ETHERSCAN_API_URL}" }
@@ -47,6 +49,7 @@ polygon = "${POLYGON_RPC_URL}"
 4663 = { key = "${ROBINHOOD_ETHERSCAN_API_KEY}", url = "${ROBINHOOD_ETHERSCAN_API_URL}" }
 999 = { key = "${HYPER_EVM_ETHERSCAN_API_KEY}", url = "${HYPER_EVM_ETHERSCAN_API_URL}" }
 137 = { key = "${POLYGON_ETHERSCAN_API_KEY}", url = "${POLYGON_ETHERSCAN_API_URL}" }
+5042 = { key = "${ARC_ETHERSCAN_API_KEY}", url = "${ARC_ETHERSCAN_API_URL}" }
 
 [fuzz]
 runs = 1024
