@@ -34,6 +34,8 @@ Note: This script performs deterministic deployment based on the deployer wallet
 
 3. Run the following command to configure the bridge encoders deployed at step 2. The script detects the connected chain via its chain id (which must be one of the supported chains listed in the script) and registers the CCTP V2 domains and LayerZero V2 endpoint ids of the other supported chains. This script needs to be run from an address holding the `INFRA_CONFIG_ROLE` in the `AccessManager` deployed at step 2.
 
+   The script skips the registrations already onchain with the expected value, so it can be rerun on an already configured chain. To add a chain, add it to the script's chain table and rerun the script on every other chain: only the new chain's registrations are executed (or logged in view mode).
+
 ```
 forge script script/setup/SetupBridgeEncoders.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
