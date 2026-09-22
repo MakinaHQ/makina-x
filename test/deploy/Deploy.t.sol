@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+import {Test} from "forge-std/Test.sol";
+
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
@@ -22,22 +24,25 @@ import {DeployMakinaX} from "script/deploy/DeployMakinaX.s.sol";
 import {SetupBridgeEncoders} from "script/setup/SetupBridgeEncoders.s.sol";
 
 import {Roles} from "../utils/Roles.sol";
-import {Base_Test} from "../base/Base.t.sol";
+import {Base} from "../base/Base.sol";
 
-contract Deploy_Scripts_Test is Base_Test {
+contract Deploy_Scripts_Test is Base, Test {
     DeployMakinaX public deployMakinaX;
     CreateModule public createModule;
     CreateModuleFree public createModuleFree;
 
-    function setUp() public override {
+    function test_LoadParamsFromEnv() public {
+        string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
+        string memory infraOutputJson = vm.readFile(string.concat(basePath, "outputs/infra/Mainnet-Test.json"));
+
         vm.setEnv("INFRA_INPUT_FILENAME", "Mainnet-Test.json");
         vm.setEnv("INFRA_OUTPUT_FILENAME", "Mainnet-Test.json");
-        vm.setEnv("SKIP_AM_SETUP", "false");
-        vm.setEnv("VIEW_MODE", "false");
-    }
-
-    function test_LoadedState() public {
+        vm.setEnv("SKIP_AM_SETUP", "true");
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.loadParamsFromEnv();
+
+        assertTrue(deployMakinaX.skipAMSetup());
+        assertEq(deployMakinaX.outputPath(), string.concat(basePath, "outputs/infra/Mainnet-Test.json"));
 
         address superAdmin = vm.parseJsonAddress(deployMakinaX.inputJson(), ".superAdminRoleGrant.account");
         assertTrue(superAdmin != address(0));
@@ -51,9 +56,16 @@ contract Deploy_Scripts_Test is Base_Test {
         assertTrue(vm.keyExistsJson(deployMakinaX.inputJson(), ".otherRoleGrants[0]"));
         assertTrue(vm.keyExistsJson(deployMakinaX.inputJson(), ".bridgesTargets[0]"));
 
-        // no factory needed here, only the input files are inspected
+        // The module scripts read the factory from the infra output file
+        vm.setEnv("MODULE_INPUT_FILENAME", "Mainnet-Test.json");
+        vm.setEnv("MODULE_OUTPUT_FILENAME", "Mainnet-Test.json");
+        vm.setEnv("VIEW_MODE", "false");
         createModule = new CreateModule();
-        createModule.setParams(address(0), "Mainnet-Test.json", "Mainnet-Test.json");
+        createModule.loadParamsFromEnv();
+
+        assertFalse(createModule.viewMode());
+        assertEq(address(createModule.moduleFactory()), vm.parseJsonAddress(infraOutputJson, ".ModuleFactory"));
+        assertEq(createModule.moduleOutputPath(), string.concat(basePath, "outputs/modules/Mainnet-Test.json"));
 
         address moduleSafe = vm.parseJsonAddress(createModule.moduleInputJson(), ".safe");
         assertTrue(moduleSafe != address(0));
@@ -63,20 +75,44 @@ contract Deploy_Scripts_Test is Base_Test {
 
         assertTrue(vm.keyExistsJson(createModule.moduleInputJson(), ".initialProvider"));
 
+        vm.setEnv("MODULE_INPUT_FILENAME", "Mainnet-Test-Free.json");
+        vm.setEnv("MODULE_OUTPUT_FILENAME", "Mainnet-Test-Free.json");
         createModuleFree = new CreateModuleFree();
-        createModuleFree.setParams(address(0), "Mainnet-Test-Free.json", "Mainnet-Test-Free.json");
+        createModuleFree.loadParamsFromEnv();
+
+        assertEq(address(createModuleFree.moduleFactory()), vm.parseJsonAddress(infraOutputJson, ".ModuleFactory"));
+        assertEq(createModuleFree.moduleOutputPath(), string.concat(basePath, "outputs/modules/Mainnet-Test-Free.json"));
 
         address freeModuleSafe = vm.parseJsonAddress(createModuleFree.moduleInputJson(), ".safe");
         assertTrue(freeModuleSafe != address(0));
 
         bytes32 freeModuleSalt = vm.parseJsonBytes32(createModuleFree.moduleInputJson(), ".salt");
         assertTrue(freeModuleSalt != bytes32(0));
+
+        // The bridge encoders setup script reads the AccessManager and the encoders from the infra output file
+        vm.setEnv("VIEW_MODE", "true");
+        SetupBridgeEncoders setupBridgeEncoders = new SetupBridgeEncoders();
+        setupBridgeEncoders.loadParamsFromEnv();
+
+        assertTrue(setupBridgeEncoders.viewMode());
+        assertEq(setupBridgeEncoders.accessManager(), vm.parseJsonAddress(infraOutputJson, ".AccessManager"));
+        assertEq(
+            setupBridgeEncoders.bridgeEncoders(CCTP_V2_BRIDGE_ID),
+            vm.parseJsonAddress(infraOutputJson, string.concat(".BridgeEncoders.", vm.toString(CCTP_V2_BRIDGE_ID)))
+        );
+        assertEq(
+            setupBridgeEncoders.bridgeEncoders(LAYER_ZERO_V2_BRIDGE_ID),
+            vm.parseJsonAddress(
+                infraOutputJson, string.concat(".BridgeEncoders.", vm.toString(LAYER_ZERO_V2_BRIDGE_ID))
+            )
+        );
     }
 
     function testScript_DeployMakinaX() public {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setParams("Mainnet-Test.json", "Mainnet-Test.json");
         deployMakinaX.run();
 
         (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
@@ -139,7 +175,7 @@ contract Deploy_Scripts_Test is Base_Test {
                 assertEq(CctpV2BridgeEncoder(bridgeEncoders[i]).cctpV2TokenMessenger(), expectedMessenger);
                 assertEq(CctpV2BridgeEncoder(bridgeEncoders[i]).authority(), accessManager);
             } else {
-                revert("unsupported bridgeId in test fixture");
+                revert("unsupported bridgeId");
             }
         }
 
@@ -154,6 +190,7 @@ contract Deploy_Scripts_Test is Base_Test {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setParams("Mainnet-Test.json", "Mainnet-Test.json");
         deployMakinaX.setTestMode();
         deployMakinaX.run();
 
@@ -187,6 +224,7 @@ contract Deploy_Scripts_Test is Base_Test {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setParams("Mainnet-Test.json", "Mainnet-Test.json");
         deployMakinaX.setTestMode();
         deployMakinaX.run();
 
@@ -223,6 +261,7 @@ contract Deploy_Scripts_Test is Base_Test {
         vm.createSelectFork({urlOrAlias: "mainnet"});
 
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setParams("Mainnet-Test.json", "Mainnet-Test.json");
         deployMakinaX.setTestMode();
         deployMakinaX.run();
 
@@ -375,7 +414,7 @@ contract Deploy_Scripts_Test is Base_Test {
             encoderSetterSelectors = new bytes4[](1);
             encoderSetterSelectors[0] = CctpV2BridgeEncoder.setCctpDomain.selector;
         } else {
-            revert("unsupported bridgeId in test fixture");
+            revert("unsupported bridgeId");
         }
 
         // The encoder setters are guarded by INFRA_CONFIG_ROLE

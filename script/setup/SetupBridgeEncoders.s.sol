@@ -54,10 +54,6 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
 
     bool public viewMode;
 
-    constructor() {
-        viewMode = vm.envOr("VIEW_MODE", false);
-    }
-
     /// @dev Test hook to set the AccessManager and the bridge encoders explicitly, instead of having `run` resolve
     ///      them from the env vars and the infra output file. Takes the arrays returned by `DeployMakinaX.deployment`.
     function setParams(address _accessManager, uint16[] memory bridgeIds, address[] memory encoders) public {
@@ -71,7 +67,7 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
 
     function run() public {
         if (accessManager == address(0)) {
-            _loadParamsFromEnv();
+            loadParamsFromEnv();
         }
 
         ChainConfig[] memory chains = _chains();
@@ -183,7 +179,9 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
 
     /// @dev Reads the AccessManager and the bridge encoders from this script's infra output file. Encoders absent
     ///      from the file are left unset: `_buildCalls` only requires the ones the local chain supports.
-    function _loadParamsFromEnv() internal {
+    function loadParamsFromEnv() public {
+        viewMode = vm.envOr("VIEW_MODE", false);
+
         string memory outputJson = vm.readFile(
             string.concat(vm.projectRoot(), "/script/deploy/outputs/infra/", vm.envString("INFRA_OUTPUT_FILENAME"))
         );

@@ -38,10 +38,6 @@ abstract contract CreateModuleBase is Script {
 
     address public module;
 
-    constructor() {
-        viewMode = vm.envOr("VIEW_MODE", false);
-    }
-
     /// @dev Test hook to set the ModuleFactory and the module input/output filenames explicitly, instead of having
     ///      `run` resolve them from the env vars and the infra output file.
     function setParams(address _moduleFactory, string memory moduleInputFilename, string memory moduleOutputFilename)
@@ -64,7 +60,7 @@ abstract contract CreateModuleBase is Script {
 
     function run() public {
         if (address(moduleFactory) == address(0)) {
-            _loadParamsFromEnv();
+            loadParamsFromEnv();
         }
 
         bytes memory callData = _createModuleCalldata(
@@ -96,7 +92,9 @@ abstract contract CreateModuleBase is Script {
 
     /// @dev Calls `setParams` with this script's env vars, reading the factory address from the infra output file.
     ///      The output filename is not needed in view mode.
-    function _loadParamsFromEnv() internal {
+    function loadParamsFromEnv() public {
+        viewMode = vm.envOr("VIEW_MODE", false);
+
         string memory infraOutputPath =
             string.concat(vm.projectRoot(), "/script/deploy/outputs/infra/", vm.envString("INFRA_OUTPUT_FILENAME"));
         string memory moduleOutputFilename = viewMode ? "" : vm.envString("MODULE_OUTPUT_FILENAME");

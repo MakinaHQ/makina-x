@@ -30,22 +30,22 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
 
     bool public writeOutput = true;
 
-    constructor() {
-        skipAMSetup = vm.envOr("SKIP_AM_SETUP", false);
-
-        string memory inputFilename = vm.envString("INFRA_INPUT_FILENAME");
-        string memory outputFilename = vm.envString("INFRA_OUTPUT_FILENAME");
-
+    /// @dev Test hook to set the infra input/output filenames explicitly, instead of having `run` resolve them
+    ///      from the env vars.
+    function setParams(string memory inputFilename, string memory outputFilename) public {
         string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
 
         // load input params
-        string memory inputPath = string.concat(basePath, "inputs/infra/");
-        inputPath = string.concat(inputPath, inputFilename);
-        inputJson = vm.readFile(inputPath);
+        inputJson = vm.readFile(string.concat(basePath, "inputs/infra/", inputFilename));
 
         // output path to later save deployed contracts
-        outputPath = string.concat(basePath, "outputs/infra/");
-        outputPath = string.concat(outputPath, outputFilename);
+        outputPath = string.concat(basePath, "outputs/infra/", outputFilename);
+    }
+
+    /// @dev Calls `setParams` with this script's env vars.
+    function loadParamsFromEnv() public {
+        skipAMSetup = vm.envOr("SKIP_AM_SETUP", false);
+        setParams(vm.envString("INFRA_INPUT_FILENAME"), vm.envString("INFRA_OUTPUT_FILENAME"));
     }
 
     function deployment() public view returns (MakinaXInfra memory, uint16[] memory, address[] memory) {
@@ -53,6 +53,10 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
     }
 
     function run() public {
+        if (bytes(inputJson).length == 0) {
+            loadParamsFromEnv();
+        }
+
         _deploySetupBefore();
         _coreSetup();
         _deploySetupAfter();
