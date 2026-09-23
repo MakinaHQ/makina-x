@@ -1,9 +1,6 @@
 {
   "lib/enso-weiroll": {
-    "branch": {
-      "name": "main",
-      "rev": "900250114203727ff236d3f6313673c17c2d90dd"
-    }
+    "rev": "900250114203727ff236d3f6313673c17c2d90dd"
   },
   "lib/forge-std": {
     "tag": {

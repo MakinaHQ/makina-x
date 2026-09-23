@@ -4,12 +4,13 @@ This README outlines the steps to deploy the MakinaX contracts and to create Mak
 
 ## Environment setup
 
-- Copy `.env.example` to `.env` and fill in the required RPC URLs, Etherscan API URLs, and API keys.
+- Copy `.env.example` to `.env` and fill in the required RPC URLs and the Etherscan API key.
 - Build the project as described in the [root README](../README.md). `yarn build:ir` is required, as `DeployMakinaX` deploys `WeirollVM` from the IR build output.
 - Some networks are preconfigured in `foundry.toml` and only require the corresponding environment variables. More networks can be added following similar configuration.
 - Notation used in the commands:
-  - `<wallet-options>` - the flags specifying the deployer wallet, see the [Foundry docs](https://getfoundry.sh/forge/reference/script/)
+  - `<wallet-options>` - the flags specifying the deployer wallet, e.g. `--account <keystore-name>` for a Foundry keystore. For other options, refer to the [Foundry docs](https://getfoundry.sh/forge/reference/script/)
   - `<network-alias>` - must match a network name declared in `foundry.toml`
+- Each script documents its env vars in its NatSpec header.
 
 ## Infrastructure Deployment
 
@@ -30,7 +31,7 @@ Set the `INFRA_INPUT_FILENAME` and `INFRA_OUTPUT_FILENAME` values in your `.env`
 forge script script/deploy/DeployMakinaX.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast --verify -vvvv
 ```
 
-Note: This script performs deterministic deployment based on the deployer wallet address via the [CreateX Factory contract](https://github.com/pcaversaccio/createx).
+Note: This script performs deterministic deployment based on the deployer wallet address via the [CreateX Factory contract](https://github.com/pcaversaccio/createx). Implementation contracts already deployed by the same wallet are reused, and the script fails before broadcasting when a deterministic address is already occupied.
 
 3. Run the following command to configure the bridge encoders deployed at step 2. The script detects the connected chain via its chain id (which must be one of the supported chains listed in the script) and registers the CCTP V2 domains and LayerZero V2 endpoint ids of the other supported chains. This script needs to be run from an address holding the `INFRA_CONFIG_ROLE` in the `AccessManager` deployed at step 2.
 
@@ -48,7 +49,7 @@ Set `SKIP_AM_SETUP=true` to skip the `AccessManager` setup at step 2 (function r
 
 ### Production: view mode (step 3)
 
-In production, step 3 is run from an account holding the `INFRA_CONFIG_ROLE`. Set `VIEW_MODE=true` to log each call's target (bridge encoder) and calldata for the account to submit, instead of broadcasting. The target chain's `--rpc-url` is still required, as the script selects the chain via its chain id. Leave the variable unset (or `false`) to broadcast.
+In production, step 3 is run from an account holding the `INFRA_CONFIG_ROLE`. Set `VIEW_MODE=true` to log each call's target (bridge encoder) and calldata for the account to submit, alongside its `AccessManager.schedule` wrapper for roles with an execution delay, instead of broadcasting. The target chain's `--rpc-url` is still required, as the script selects the chain via its chain id. Leave the variable unset (or `false`) to broadcast.
 
 ## Module Instances
 
@@ -78,4 +79,4 @@ forge script script/deploy/CreateModuleFree.s.sol --rpc-url <network-alias> <wal
 
 ### Production: view mode
 
-In production, a standard module instance is created from an account holding the `STRATEGY_DEPLOYMENT_ROLE`. Set `VIEW_MODE=true` to log the call's target (`ModuleFactory`) and calldata for that account to submit, instead of broadcasting. The calldata is built from the input files only, so no `--rpc-url` or `--account` is needed, and no output file is written (`MODULE_OUTPUT_FILENAME` can be left unset). The setting applies to both scripts above. Leave the variable unset (or `false`) to broadcast.
+In production, a standard module instance is created from an account holding the `STRATEGY_DEPLOYMENT_ROLE`. Set `VIEW_MODE=true` to log the call's target (`ModuleFactory`) and calldata for that account to submit, alongside its `AccessManager.schedule` wrapper for roles with an execution delay, instead of broadcasting. The calldata is built from the input files only, so no `--rpc-url` or `<wallet-options>` are needed, and no output file is written (`MODULE_OUTPUT_FILENAME` can be left unset). The setting applies to both scripts above. Leave the variable unset (or `false`) to broadcast.

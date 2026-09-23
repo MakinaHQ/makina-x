@@ -2,14 +2,15 @@
 pragma solidity 0.8.35;
 
 import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
+import {console} from "forge-std/console.sol";
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 
 import {ICctpV2BridgeEncoder} from "../../src/interfaces/ICctpV2BridgeEncoder.sol";
 import {ILayerZeroV2BridgeEncoder} from "../../src/interfaces/ILayerZeroV2BridgeEncoder.sol";
 
+import {AMGovCalldata} from "../deploy/utils/AMGovCalldata.sol";
+import {Constants} from "../../test/utils/Constants.sol";
 import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 
 /// @notice Configures the MakinaX bridge encoders on the connected chain.
@@ -33,12 +34,7 @@ import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the deployed contract addresses
 ///                            (under script/deploy/outputs/infra/)
 ///   VIEW_MODE (optional)   - if true, logs each call's target + calldata instead of broadcasting
-contract SetupBridgeEncoders is Script, IntegrationIds {
-    struct Call {
-        address target;
-        bytes data;
-    }
-
+contract SetupBridgeEncoders is Script, AMGovCalldata, Constants, IntegrationIds {
     struct ChainConfig {
         uint256 chainId;
         string name;
@@ -46,9 +42,6 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
         bool cctpSupported; // whether CCTP V2 supports this chain
         uint32 lzEid; // LayerZero V2 endpoint id (0 if unsupported)
     }
-
-    /// @dev Ethereum's CCTP domain (0) is auto-registered on the encoder and cannot be set again.
-    uint256 internal constant ETHEREUM_CHAIN_ID = 1;
 
     address public accessManager;
     mapping(uint16 bridgeId => address encoder) public bridgeEncoders;
@@ -58,12 +51,17 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
     /// @dev Test hook to set the AccessManager and the bridge encoders explicitly, instead of having `run` resolve
     ///      them from the env vars and the infra output file. Takes the arrays returned by `DeployMakinaX.deployment`.
     function setParams(address _accessManager, uint16[] memory bridgeIds, address[] memory encoders) public {
-        require(bridgeIds.length == encoders.length, "bridge ids / encoders length mismatch");
+        require(bridgeIds.length == encoders.length, "SetupBridgeEncoders: bridge ids / encoders length mismatch");
 
         accessManager = _accessManager;
         for (uint256 i; i < bridgeIds.length; ++i) {
             bridgeEncoders[bridgeIds[i]] = encoders[i];
         }
+    }
+
+    /// @dev Test hook to select the mode explicitly, instead of having `run` read it from the `VIEW_MODE` env var.
+    function setViewMode(bool _viewMode) public {
+        viewMode = _viewMode;
     }
 
     function run() public {
@@ -75,12 +73,15 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
         Call[] memory calls = _buildCalls(_find(chains, block.chainid), chains);
 
         if (calls.length == 0) {
-            console2.log("Bridge encoders already configured, nothing to do");
+            console.log("Bridge encoders already configured, nothing to do");
             return;
         }
 
         if (viewMode) {
-            _logCalls(calls);
+            console.log("AccessManager:", accessManager);
+            for (uint256 i; i < calls.length; ++i) {
+                _logCall(calls[i]);
+            }
             return;
         }
 
@@ -168,16 +169,21 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
                 local.cctpSupported && f.cctpSupported && f.chainId != ETHEREUM_CHAIN_ID
                     && !_isCctpDomainSet(cctpEncoder, f.chainId, f.cctpDomain)
             ) {
-                calls[k] = Call(
-                    cctpEncoder, abi.encodeCall(ICctpV2BridgeEncoder.setCctpDomain, (f.chainId, f.cctpDomain))
-                );
+                calls[k] = Call({
+                    label: string.concat("CctpV2BridgeEncoder.setCctpDomain ", f.name),
+                    target: cctpEncoder,
+                    data: abi.encodeCall(ICctpV2BridgeEncoder.setCctpDomain, (f.chainId, f.cctpDomain))
+                });
                 ++k;
             }
 
             // LayerZero V2: register the foreign endpoint id.
             if (local.lzEid != 0 && f.lzEid != 0 && !_isLzEndpointIdSet(lzEncoder, f.chainId, f.lzEid)) {
-                calls[k] =
-                    Call(lzEncoder, abi.encodeCall(ILayerZeroV2BridgeEncoder.setLzEndpointId, (f.chainId, f.lzEid)));
+                calls[k] = Call({
+                    label: string.concat("LayerZeroV2BridgeEncoder.setLzEndpointId ", f.name),
+                    target: lzEncoder,
+                    data: abi.encodeCall(ILayerZeroV2BridgeEncoder.setLzEndpointId, (f.chainId, f.lzEid))
+                });
                 ++k;
             }
         }
@@ -211,7 +217,7 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
     /// @dev Returns the bridge encoder set for the bridge id, reverting if unset.
     function _encoder(uint16 bridgeId) internal view returns (address encoder) {
         encoder = bridgeEncoders[bridgeId];
-        require(encoder != address(0), "bridge encoder not set");
+        require(encoder != address(0), "SetupBridgeEncoders: bridge encoder not set");
     }
 
     /// @dev Reads the AccessManager and the bridge encoders from this script's infra output file. Encoders absent
@@ -240,21 +246,6 @@ contract SetupBridgeEncoders is Script, IntegrationIds {
                 return chains[i];
             }
         }
-        revert(string.concat("unsupported chain id: ", vm.toString(chainId)));
-    }
-
-    function _logCalls(Call[] memory calls) internal view {
-        console2.log("AccessManager:", accessManager);
-
-        for (uint256 i; i < calls.length; ++i) {
-            console2.log("Target (BridgeEncoder):", calls[i].target);
-            console2.log("Calldata:");
-            console2.logBytes(calls[i].data);
-
-            console2.log("AccessManager schedule calldata:");
-            console2.logBytes(abi.encodeCall(IAccessManager.schedule, (calls[i].target, calls[i].data, 0)));
-
-            console2.log("\n");
-        }
+        revert(string.concat("SetupBridgeEncoders: unsupported chain id: ", vm.toString(chainId)));
     }
 }
