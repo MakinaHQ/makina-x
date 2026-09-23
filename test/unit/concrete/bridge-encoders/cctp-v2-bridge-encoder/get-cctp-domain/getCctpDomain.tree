@@ -1,5 +1,8 @@
 getCctpDomain.t.sol
-├── when the provided EVM chain ID is not registered
-│  └── it should revert with EvmChainIdNotRegistered
-└── when the provided EVM chain ID is registered
-    └── it should return the associated CCTP Domain
+├── when the provided EVM chain ID is the Mainnet chain ID (1)
+│  └── it should return the Mainnet CCTP domain (0)
+└── when the provided EVM chain ID is not the Mainnet chain ID
+   ├── given no CCTP domain is registered for the provided EVM chain ID
+   │  └── it should revert with CctpDomainNotRegistered
+   └── given a CCTP domain is registered for the provided EVM chain ID
+      └── it should return the registered CCTP domain

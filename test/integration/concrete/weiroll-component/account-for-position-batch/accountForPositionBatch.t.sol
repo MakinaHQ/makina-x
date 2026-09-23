@@ -73,6 +73,13 @@ contract AccountForPositionBatch_Integration_Concrete_Test is WeirollComponent_I
         makinaXModule.accountForPositionBatch(instructions, new uint256[](0));
     }
 
+    function test_RevertWhen_CallerNotOperator() public {
+        IWeirollComponent.Instruction[] memory instructions;
+
+        vm.expectRevert(Errors.UnauthorizedCaller.selector);
+        makinaXModule.accountForPositionBatch(instructions, new uint256[](0));
+    }
+
     function test_AccountForPositionBatch() public {
         // create supply position
         uint256 supplyInputAmount = 2e18;

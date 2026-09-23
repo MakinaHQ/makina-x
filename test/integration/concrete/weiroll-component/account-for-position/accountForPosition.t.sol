@@ -174,6 +174,18 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         makinaXModule.accountForPosition(instruction);
     }
 
+    function test_RevertGiven_PriceFeedRouteNotRegistered() public {
+        IWeirollComponent.Instruction memory instruction =
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
+
+        vm.prank(address(safe));
+        makinaXModule.clearFeedRoute(address(tokenB));
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenB)));
+        vm.prank(operator);
+        makinaXModule.accountForPosition(instruction);
+    }
+
     function test_AccountForPosition_4626() public {
         uint256 safeBal = vault.balanceOf(address(safe));
 

@@ -1,5 +1,5 @@
 getLzEndpointId.t.sol
-├── when no endpoint ID is registered for the given EVM chain ID
+├── given no LayerZero endpoint ID is registered for the provided EVM chain ID
 │  └── it should revert with LzEndpointIdNotRegistered
-└── when an endpoint ID is registered for the given EVM chain ID
-    └── it should return the associated endpoint ID
+└── given a LayerZero endpoint ID is registered for the provided EVM chain ID
+   └── it should return the registered LayerZero endpoint ID

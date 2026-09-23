@@ -1,6 +1,10 @@
 clearFeedRoute.t.sol
-├── given price data is not registered for the provided token
-│  └── it should revert with PriceFeedRouteNotRegistered
-└── given a route is registered for the provided token
-   ├── it should emit a FeedRouteCleared event
-   └── it should clear the feed route for the provided token in contract storage
+├── when caller is not the module's safe
+│  └── it should revert with UnauthorizedCaller
+└── when caller is the module's safe
+   ├── given no feed route is registered for the provided token
+   │  └── it should revert with PriceFeedRouteNotRegistered
+   └── given a feed route is registered for the provided token
+      ├── it should clear the feed route of the provided token in contract storage
+      ├── it should keep the staleness thresholds of the route's feeds
+      └── it should emit a FeedRouteCleared event
