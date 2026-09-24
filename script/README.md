@@ -27,7 +27,7 @@ Set the `INFRA_INPUT_FILENAME` and `INFRA_OUTPUT_FILENAME` values in your `.env`
 
 2. Run the following command to initiate the deployment of infrastructure contracts, as well as registry and Access Management setup. This will generate an output file at `script/deploy/outputs/infra/{INFRA_OUTPUT_FILENAME}` containing the deployed contract addresses.
 
-```
+```shell
 forge script script/deploy/DeployMakinaX.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast --verify -vvvv
 ```
 
@@ -37,7 +37,7 @@ Note: This script performs deterministic deployment based on the deployer wallet
 
    The script skips the registrations already onchain with the expected value, so it can be rerun on an already configured chain. To add a chain, add it to the script's chain table and rerun the script on every other chain: only the new chain's registrations are executed (or logged in view mode).
 
-```
+```shell
 forge script script/setup/SetupBridgeEncoders.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
 
@@ -62,7 +62,7 @@ Deployed through `ModuleFactory.createModule`, which is a permissioned call. The
 1. Copy `script/deploy/inputs/modules/TEMPLATE.json` to `script/deploy/inputs/modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
 2. Run the following command to initiate the deployment. This will generate an output file at `script/deploy/outputs/modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
 
-```
+```shell
 forge script script/deploy/CreateModule.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
 
@@ -73,7 +73,7 @@ Deployed through `ModuleFactory.createModuleFree`, which is callable by anyone w
 1. Copy `script/deploy/inputs/modules/TEMPLATE-Free.json` to `script/deploy/inputs/modules/{MODULE_INPUT_FILENAME}` and fill in the required variables.
 2. Run the following command to initiate the deployment. This will generate an output file at `script/deploy/outputs/modules/{MODULE_OUTPUT_FILENAME}` containing the deployed module address.
 
-```
+```shell
 forge script script/deploy/CreateModuleFree.s.sol --rpc-url <network-alias> <wallet-options> --slow --broadcast -vvvv
 ```
 
