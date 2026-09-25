@@ -22,7 +22,7 @@ import {ModuleFactory} from "src/factory/ModuleFactory.sol";
 import {CreateModule} from "script/deploy/CreateModule.s.sol";
 import {CreateModuleFree} from "script/deploy/CreateModuleFree.s.sol";
 import {DeployMakinaX} from "script/deploy/DeployMakinaX.s.sol";
-import {SetupBridgeEncoders} from "script/setup/SetupBridgeEncoders.s.sol";
+import {SetupBridgeEncoders} from "script/deploy/SetupBridgeEncoders.s.sol";
 
 import {Constants} from "../utils/Constants.sol";
 import {Roles} from "../utils/Roles.sol";
@@ -538,7 +538,7 @@ contract Deploy_Scripts_Test is Base, Constants, Test {
     }
 
     function _freeTestFilename() internal returns (string memory) {
-        return string.concat(getChain(ETHEREUM_CHAIN_ID).name, "-Test-Free.json");
+        return string.concat("Free-", getChain(ETHEREUM_CHAIN_ID).name, "-Test.json");
     }
 
     /// @dev A committed test record under `outputs/`. Test deployments are deterministic, so they match the records

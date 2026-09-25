@@ -9,7 +9,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ICctpV2BridgeEncoder} from "../../src/interfaces/ICctpV2BridgeEncoder.sol";
 import {ILayerZeroV2BridgeEncoder} from "../../src/interfaces/ILayerZeroV2BridgeEncoder.sol";
 
-import {AMGovCalldata} from "../deploy/utils/AMGovCalldata.sol";
+import {AMGovCalldata} from "./utils/AMGovCalldata.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {IntegrationIds} from "../../test/utils/IntegrationIds.sol";
 

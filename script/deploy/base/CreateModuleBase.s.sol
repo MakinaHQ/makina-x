@@ -5,11 +5,11 @@ import {Script} from "forge-std/Script.sol";
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import {IMakinaXGovernable} from "../../src/interfaces/IMakinaXGovernable.sol";
-import {IMakinaXModule} from "../../src/interfaces/IMakinaXModule.sol";
-import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
+import {IMakinaXGovernable} from "../../../src/interfaces/IMakinaXGovernable.sol";
+import {IMakinaXModule} from "../../../src/interfaces/IMakinaXModule.sol";
+import {ModuleFactory} from "../../../src/factory/ModuleFactory.sol";
 
-import {AMGovCalldata} from "./utils/AMGovCalldata.sol";
+import {AMGovCalldata} from "../utils/AMGovCalldata.sol";
 
 /// @notice Shared logic of the scripts creating a MakinaXModule clone through the `ModuleFactory`.
 /// @dev Concrete scripts implement `_createCall`, building the factory call to perform.

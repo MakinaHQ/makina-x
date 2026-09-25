@@ -3,7 +3,7 @@ pragma solidity 0.8.35;
 
 import {ModuleFactory} from "../../src/factory/ModuleFactory.sol";
 
-import {CreateModuleBase} from "./CreateModuleBase.s.sol";
+import {CreateModuleBase} from "./base/CreateModuleBase.s.sol";
 
 /// @notice Builds the `ModuleFactory.createModuleFree` call for a new MakinaXModule clone, with the service
 ///         parameters enforced by the factory, then broadcasts it or logs it.
