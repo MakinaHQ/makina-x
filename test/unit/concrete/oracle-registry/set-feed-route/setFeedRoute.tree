@@ -1,9 +1,13 @@
 setFeedRoute.t.sol
-├── when caller does not have the relevant role
-│  └── it should revert with AccessManagedUnauthorized
-└── when caller has the relevant role
-   ├── given first price feed is null
+├── when caller is not the module's safe
+│  └── it should revert with UnauthorizedCaller
+└── when caller is the module's safe
+   ├── when the first price feed is zero
    │  └── it should revert with InvalidFeedRoute
-   └── given first price feed is non null
-      ├── it should emit a FeedRouteRegistered event
-      └── it should associate the provided feed route to the provided token in contract storage
+   └── when the first price feed is not zero
+      ├── given the token decimals are unavailable, below minimum or above maximum
+      │  └── it should revert with InvalidDecimals
+      └── given the token decimals are within the allowed range
+         ├── it should associate the provided feed route to the provided token in contract storage
+         ├── it should associate the provided feeds to their respective staleness thresholds in contract storage
+         └── it should emit a FeedRouteRegistered event

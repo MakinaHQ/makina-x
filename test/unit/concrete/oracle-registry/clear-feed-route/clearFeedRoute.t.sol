@@ -38,7 +38,7 @@ contract ClearFeedRoute_Unit_Concrete_Test is OracleRegistry_Unit_Concrete_Test 
         assertEq(oracleRegistry.getFeedStaleThreshold(address(priceFeed1)), DEFAULT_PF_STALE_THRSHLD);
     }
 
-    function test_SetFeedRoute_With2Feeds() public {
+    function test_ClearFeedRoute_With2Feeds() public {
         priceFeed1 = new MockPriceFeed(18, int256(1e18), block.timestamp);
         priceFeed2 = new MockPriceFeed(18, int256(1e18), block.timestamp);
 

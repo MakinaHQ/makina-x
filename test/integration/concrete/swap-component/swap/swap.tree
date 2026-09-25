@@ -2,41 +2,48 @@ swap.t.sol
 ├── when call is reentrant
 │  └── it should revert
 └── when call is not reentrant
-   ├── when the module is suspended
+   ├── given the module is suspended
    │  └── it should revert with Suspended
-   └── when the module is not suspended
-      ├── when the module is paused
+   └── given the module is not suspended
+      ├── given the module is paused
       │  └── it should revert with Paused
-      └── when the module is not paused
+      └── given the module is not paused
          ├── when caller is not a registered operator
          │  └── it should revert with UnauthorizedCaller
          └── when caller is a registered operator
-            ├── given operating mode is Open
-            │  ├── given the swap order fails to be executed
-            │  │  └── it should revert
-            │  └── given the swap order is successfuly executed
-            │     ├── given the output amount is smaller that given minimum
-            │     │  └── it should revert with AmountOutTooLow
-            │     └── given the output amount is not smaller that given minimum
-            │        ├── order.inputAmount of order.inputToken should have been spent in the module's safe
-            │        ├── fees, if any, should have been received by fee collector
-            │        └── at least order.minOutputAmount of order.outputToken, minus eventual fees, should have been received by the module's safe
-            └── given operating mode is Fenced or Walled
-               ├── when the swap order has an input or output token for which price data is not registered
-               │  └── it should revert with PriceFeedRouteNotRegistered
-               └── when the swap order have input and output tokens with registered price data
-                  ├── given the swap order fails to be executed
-                  │  └── it should revert
-                  └── given the swap order is successfuly executed
-                     ├── given the output amount is smaller that given minimum
-                     │  └── it should revert with AmountOutTooLow
-                     └── given the output amount is not smaller that given minimum
-                        ├── given there is an ongoing cooldown for swaps
-                        │  └── it should revert with OngoingCooldown
-                        └── given there is no ongoing cooldown for swaps
-                           ├── given the value loss induced by one of the swaps is higher than maxSwapLossBps
-                           │  └── it should revert with MaxValueLossExceeded
-                           └── given no value loss induced by any of the swaps is higher than maxSwapLossBps
-                              ├── order.inputAmount of order.inputToken should have been spent in the module's safe
-                              ├── fees, if any, should have been received by fee collector
-                              └── at least order.minOutputAmount of order.outputToken, minus eventual fees, should have been received by the module's safe
+            ├── when the input token is not a contract
+            │  └── it should revert with InvalidInputToken
+            └── when the input token is a contract
+               ├── given the input token transfer from the module's safe fails
+               │  └── it should revert
+               ├── given the input token transfer from the module's safe returns false
+               │  └── it should revert with TransferFromSafeFailed
+               └── given the input token transfer from the module's safe succeeds
+                  ├── given the swapper targets are not set
+                  │  └── it should revert with SwapperTargetsNotSet
+                  └── given the swapper targets are set
+                     ├── given the swap order fails to be executed
+                     │  └── it should revert with SwapFailed
+                     └── given the swap order is successfully executed
+                        ├── given the output amount is smaller than the given minimum
+                        │  └── it should revert with AmountOutTooLow
+                        └── given the output amount is not smaller than the given minimum
+                           ├── given operating mode is Open
+                           │  ├── it should spend order.inputAmount of order.inputToken from the module's safe
+                           │  ├── it should transfer the swap fee, if any, to the fee collector
+                           │  ├── it should transfer at least order.minOutputAmount of order.outputToken, minus the fee, to the module's safe
+                           │  └── it should emit a Swap event
+                           └── given operating mode is Fenced or Walled
+                              ├── given there is an ongoing cooldown for swaps
+                              │  └── it should revert with OngoingCooldown
+                              └── given there is no ongoing cooldown for swaps
+                                 ├── given price data is not registered for the input or output token
+                                 │  └── it should revert with PriceFeedRouteNotRegistered
+                                 └── given price data is registered for both the input and output tokens
+                                    ├── given the value loss induced by the swap is higher than maxSwapLossBps
+                                    │  └── it should revert with MaxValueLossExceeded
+                                    └── given the value loss induced by the swap is not higher than maxSwapLossBps
+                                       ├── it should spend order.inputAmount of order.inputToken from the module's safe
+                                       ├── it should transfer the swap fee, if any, to the fee collector
+                                       ├── it should transfer at least order.minOutputAmount of order.outputToken, minus the fee, to the module's safe
+                                       └── it should emit a Swap event

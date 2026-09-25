@@ -9,7 +9,7 @@ import {Base} from "../../test/base/Base.sol";
 
 /// @notice Deploys the MakinaX infra and runs its registry and AccessManager setup in a single broadcast.
 ///
-/// Env vars:
+/// Env vars (unless `setFilenames` was called):
 ///   INFRA_INPUT_FILENAME     - infra input file holding the deployment parameters
 ///                              (under script/deploy/inputs/infra/)
 ///   INFRA_OUTPUT_FILENAME    - infra output file to write the deployed contract addresses to
@@ -28,24 +28,25 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
 
     bool public skipAMSetup;
 
-    bool public writeOutput = true;
-
-    constructor() {
-        skipAMSetup = vm.envOr("SKIP_AM_SETUP", false);
-
-        string memory inputFilename = vm.envString("INFRA_INPUT_FILENAME");
-        string memory outputFilename = vm.envString("INFRA_OUTPUT_FILENAME");
-
+    /// @dev Test hook to set the input and output filenames explicitly, instead of having `run` resolve them from
+    ///      the env vars. An empty output filename skips writing the output file.
+    function setFilenames(string memory inputFilename, string memory outputFilename) public {
         string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
 
-        // load input params
-        string memory inputPath = string.concat(basePath, "inputs/infra/");
-        inputPath = string.concat(inputPath, inputFilename);
-        inputJson = vm.readFile(inputPath);
+        inputJson = vm.readFile(string.concat(basePath, "inputs/infra/", inputFilename));
 
-        // output path to later save deployed contracts
-        outputPath = string.concat(basePath, "outputs/infra/");
-        outputPath = string.concat(outputPath, outputFilename);
+        outputPath = bytes(outputFilename).length == 0 ? "" : string.concat(basePath, "outputs/infra/", outputFilename);
+    }
+
+    /// @dev Test hook: leaves the deployer as sole admin (restricted functions default to ADMIN_ROLE).
+    function setSkipAMSetup(bool _skip) public {
+        skipAMSetup = _skip;
+    }
+
+    /// @dev Reads `SKIP_AM_SETUP` and calls `setFilenames` with this script's env vars.
+    function loadParamsFromEnv() public {
+        skipAMSetup = vm.envOr("SKIP_AM_SETUP", false);
+        setFilenames(vm.envString("INFRA_INPUT_FILENAME"), vm.envString("INFRA_OUTPUT_FILENAME"));
     }
 
     function deployment() public view returns (MakinaXInfra memory, uint16[] memory, address[] memory) {
@@ -53,23 +54,21 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
     }
 
     function run() public {
-        _deploySetupBefore();
-        _coreSetup();
-        _deploySetupAfter();
-    }
+        if (bytes(inputJson).length == 0) {
+            loadParamsFromEnv();
+        }
 
-    /// @dev Test hook: leaves the deployer as sole admin (restricted functions default to ADMIN_ROLE)
-    ///      and skips writing the output file.
-    function setTestMode() public {
-        skipAMSetup = true;
-        writeOutput = false;
-    }
-
-    function _deploySetupBefore() internal {
-        // start broadcasting transactions
         vm.startBroadcast();
 
         (, deployer,) = vm.readCallers();
+
+        _coreSetup();
+
+        vm.stopBroadcast();
+
+        if (bytes(outputPath).length != 0) {
+            _writeOutput();
+        }
     }
 
     function _coreSetup() internal {
@@ -102,17 +101,9 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
         transferAccessManagerOwnership(_infra.accessManager);
     }
 
-    function _deploySetupAfter() internal {
-        // finish broadcasting transactions
-        vm.stopBroadcast();
-
-        if (!writeOutput) {
-            return;
-        }
-
+    function _writeOutput() internal {
         string memory key = "key-deploy-infra-output-file";
 
-        // write to file
         vm.serializeAddress(key, "AccessManager", address(_infra.accessManager));
         vm.serializeAddress(key, "MakinaXRegistry", address(_infra.registry));
         vm.serializeAddress(key, "ModuleFactory", address(_infra.moduleFactory));
@@ -183,7 +174,19 @@ contract DeployMakinaX is Base, Script, CreateXUtils {
         }
     }
 
-    function _deployCode(bytes memory bytecode, bytes32 salt) internal virtual override returns (address) {
-        return _deployCodeCreateX(bytecode, salt, deployer);
+    /// @dev Deploys through CreateX at the deployer-bound address and asserts it. An occupied CREATE2 slot (zero salt
+    ///      domain, used for implementations) is reused: that address is bound to the init code hash, so the code
+    ///      there is this exact bytecode. An occupied CREATE3 slot reverts before broadcasting.
+    function _deployCode(bytes memory bytecode, bytes32 salt) internal virtual override returns (address deployed) {
+        deployed = _computeCreateXAddress(bytecode, salt, deployer);
+
+        if (deployed.code.length != 0) {
+            if (salt == 0) {
+                return deployed;
+            }
+            revert(string.concat("DeployMakinaX: CREATE3 target already has code: ", vm.toString(deployed)));
+        }
+
+        require(_deployCodeCreateX(bytecode, salt, deployer) == deployed, "DeployMakinaX: CreateX address mismatch");
     }
 }

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
@@ -19,25 +22,31 @@ import {ModuleFactory} from "src/factory/ModuleFactory.sol";
 import {CreateModule} from "script/deploy/CreateModule.s.sol";
 import {CreateModuleFree} from "script/deploy/CreateModuleFree.s.sol";
 import {DeployMakinaX} from "script/deploy/DeployMakinaX.s.sol";
-import {SetupBridgeEncoders} from "script/setup/SetupBridgeEncoders.s.sol";
+import {SetupBridgeEncoders} from "script/deploy/SetupBridgeEncoders.s.sol";
 
+import {Constants} from "../utils/Constants.sol";
 import {Roles} from "../utils/Roles.sol";
-import {Base_Test} from "../base/Base.t.sol";
+import {Base} from "../base/Base.sol";
 
-contract Deploy_Scripts_Test is Base_Test {
+contract Deploy_Scripts_Test is Base, Constants, Test {
     DeployMakinaX public deployMakinaX;
     CreateModule public createModule;
     CreateModuleFree public createModuleFree;
 
-    function setUp() public override {
-        vm.setEnv("INFRA_INPUT_FILENAME", "Mainnet-Test.json");
-        vm.setEnv("INFRA_OUTPUT_FILENAME", "Mainnet-Test.json");
-        vm.setEnv("SKIP_AM_SETUP", "false");
-        vm.setEnv("VIEW_MODE", "false");
-    }
+    function test_LoadParamsFromEnv() public {
+        string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
+        string memory filename = _testFilename();
+        string memory freeFilename = _freeTestFilename();
+        string memory infraOutputJson = vm.readFile(string.concat(basePath, "outputs/infra/", filename));
 
-    function test_LoadedState() public {
+        vm.setEnv("INFRA_INPUT_FILENAME", filename);
+        vm.setEnv("INFRA_OUTPUT_FILENAME", filename);
+        vm.setEnv("SKIP_AM_SETUP", "true");
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.loadParamsFromEnv();
+
+        assertTrue(deployMakinaX.skipAMSetup());
+        assertEq(deployMakinaX.outputPath(), string.concat(basePath, "outputs/infra/", filename));
 
         address superAdmin = vm.parseJsonAddress(deployMakinaX.inputJson(), ".superAdminRoleGrant.account");
         assertTrue(superAdmin != address(0));
@@ -51,9 +60,16 @@ contract Deploy_Scripts_Test is Base_Test {
         assertTrue(vm.keyExistsJson(deployMakinaX.inputJson(), ".otherRoleGrants[0]"));
         assertTrue(vm.keyExistsJson(deployMakinaX.inputJson(), ".bridgesTargets[0]"));
 
-        // no factory needed here, only the input files are inspected
+        // The module scripts read the factory from the infra output file
+        vm.setEnv("MODULE_INPUT_FILENAME", filename);
+        vm.setEnv("MODULE_OUTPUT_FILENAME", filename);
+        vm.setEnv("VIEW_MODE", "false");
         createModule = new CreateModule();
-        createModule.setParams(address(0), "Mainnet-Test.json", "Mainnet-Test.json");
+        createModule.loadParamsFromEnv();
+
+        assertFalse(createModule.viewMode());
+        assertEq(address(createModule.moduleFactory()), vm.parseJsonAddress(infraOutputJson, ".ModuleFactory"));
+        assertEq(createModule.moduleOutputPath(), string.concat(basePath, "outputs/modules/", filename));
 
         address moduleSafe = vm.parseJsonAddress(createModule.moduleInputJson(), ".safe");
         assertTrue(moduleSafe != address(0));
@@ -63,24 +79,51 @@ contract Deploy_Scripts_Test is Base_Test {
 
         assertTrue(vm.keyExistsJson(createModule.moduleInputJson(), ".initialProvider"));
 
+        vm.setEnv("MODULE_INPUT_FILENAME", freeFilename);
+        vm.setEnv("MODULE_OUTPUT_FILENAME", freeFilename);
         createModuleFree = new CreateModuleFree();
-        createModuleFree.setParams(address(0), "Mainnet-Test-Free.json", "Mainnet-Test-Free.json");
+        createModuleFree.loadParamsFromEnv();
+
+        assertEq(address(createModuleFree.moduleFactory()), vm.parseJsonAddress(infraOutputJson, ".ModuleFactory"));
+        assertEq(createModuleFree.moduleOutputPath(), string.concat(basePath, "outputs/modules/", freeFilename));
 
         address freeModuleSafe = vm.parseJsonAddress(createModuleFree.moduleInputJson(), ".safe");
         assertTrue(freeModuleSafe != address(0));
 
         bytes32 freeModuleSalt = vm.parseJsonBytes32(createModuleFree.moduleInputJson(), ".salt");
         assertTrue(freeModuleSalt != bytes32(0));
+
+        // The bridge encoders setup script reads the AccessManager and the encoders from the infra output file
+        vm.setEnv("VIEW_MODE", "true");
+        SetupBridgeEncoders setupBridgeEncoders = new SetupBridgeEncoders();
+        setupBridgeEncoders.loadParamsFromEnv();
+
+        assertTrue(setupBridgeEncoders.viewMode());
+        assertEq(setupBridgeEncoders.accessManager(), vm.parseJsonAddress(infraOutputJson, ".AccessManager"));
+        assertEq(
+            setupBridgeEncoders.bridgeEncoders(CCTP_V2_BRIDGE_ID),
+            vm.parseJsonAddress(infraOutputJson, string.concat(".BridgeEncoders.", vm.toString(CCTP_V2_BRIDGE_ID)))
+        );
+        assertEq(
+            setupBridgeEncoders.bridgeEncoders(LAYER_ZERO_V2_BRIDGE_ID),
+            vm.parseJsonAddress(
+                infraOutputJson, string.concat(".BridgeEncoders.", vm.toString(LAYER_ZERO_V2_BRIDGE_ID))
+            )
+        );
     }
 
     function testScript_DeployMakinaX() public {
-        vm.createSelectFork({urlOrAlias: "mainnet"});
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
 
         deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setFilenames(_testFilename(), "");
         deployMakinaX.run();
 
         (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
             deployMakinaX.deployment();
+
+        // Check that the deployment matches the committed record
+        assertEq(vm.parseJsonAddress(_record("infra", _testFilename()), ".ModuleFactory"), address(infra.moduleFactory));
 
         string memory inputJson = deployMakinaX.inputJson();
 
@@ -139,7 +182,7 @@ contract Deploy_Scripts_Test is Base_Test {
                 assertEq(CctpV2BridgeEncoder(bridgeEncoders[i]).cctpV2TokenMessenger(), expectedMessenger);
                 assertEq(CctpV2BridgeEncoder(bridgeEncoders[i]).authority(), accessManager);
             } else {
-                revert("unsupported bridgeId in test fixture");
+                revert("unsupported bridgeId");
             }
         }
 
@@ -151,23 +194,24 @@ contract Deploy_Scripts_Test is Base_Test {
     }
 
     function testScript_CreateModule() public {
-        vm.createSelectFork({urlOrAlias: "mainnet"});
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
 
         deployMakinaX = new DeployMakinaX();
-        deployMakinaX.setTestMode();
+        deployMakinaX.setFilenames(_testFilename(), "");
+        deployMakinaX.setSkipAMSetup(true);
         deployMakinaX.run();
 
         (MakinaXInfra memory infra,,) = deployMakinaX.deployment();
 
         createModule = new CreateModule();
-        createModule.setParams(address(infra.moduleFactory), "Mainnet-Test.json", "Mainnet-Test.json");
+        createModule.setParams(address(infra.moduleFactory), _testFilename(), "");
         createModule.run();
 
         string memory inputJson = createModule.moduleInputJson();
         IMakinaXModule module = IMakinaXModule(createModule.deployment());
 
-        // The deployed module address is written to the output file
-        assertEq(vm.parseJsonAddress(vm.readFile(createModule.moduleOutputPath()), ".MakinaXModule"), address(module));
+        // Check that the deployment matches the committed record
+        assertEq(vm.parseJsonAddress(_record("modules", _testFilename()), ".MakinaXModule"), address(module));
 
         // The module is a clone of the registered implementation, at the address derived from the input salt
         bytes32 salt = vm.parseJsonBytes32(inputJson, ".salt");
@@ -184,25 +228,24 @@ contract Deploy_Scripts_Test is Base_Test {
     }
 
     function testScript_CreateModuleFree() public {
-        vm.createSelectFork({urlOrAlias: "mainnet"});
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
 
         deployMakinaX = new DeployMakinaX();
-        deployMakinaX.setTestMode();
+        deployMakinaX.setFilenames(_testFilename(), "");
+        deployMakinaX.setSkipAMSetup(true);
         deployMakinaX.run();
 
         (MakinaXInfra memory infra,,) = deployMakinaX.deployment();
 
         createModuleFree = new CreateModuleFree();
-        createModuleFree.setParams(address(infra.moduleFactory), "Mainnet-Test-Free.json", "Mainnet-Test-Free.json");
+        createModuleFree.setParams(address(infra.moduleFactory), _freeTestFilename(), "");
         createModuleFree.run();
 
         string memory inputJson = createModuleFree.moduleInputJson();
         IMakinaXModule module = IMakinaXModule(createModuleFree.deployment());
 
-        // The deployed module address is written to the output file
-        assertEq(
-            vm.parseJsonAddress(vm.readFile(createModuleFree.moduleOutputPath()), ".MakinaXModule"), address(module)
-        );
+        // Check that the deployment matches the committed record
+        assertEq(vm.parseJsonAddress(_record("modules", _freeTestFilename()), ".MakinaXModule"), address(module));
 
         // The salt is namespaced by the broadcasting account, which is the same default sender as the infra deployer
         bytes32 salt = vm.parseJsonBytes32(inputJson, ".salt");
@@ -220,10 +263,11 @@ contract Deploy_Scripts_Test is Base_Test {
     }
 
     function testScript_SetupBridgeEncoders() public {
-        vm.createSelectFork({urlOrAlias: "mainnet"});
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
 
         deployMakinaX = new DeployMakinaX();
-        deployMakinaX.setTestMode();
+        deployMakinaX.setFilenames(_testFilename(), "");
+        deployMakinaX.setSkipAMSetup(true);
         deployMakinaX.run();
 
         (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
@@ -255,6 +299,72 @@ contract Deploy_Scripts_Test is Base_Test {
         // LayerZero endpoint ids of foreign chains are registered
         assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(42161), 30110);
         assertEq(ILayerZeroV2BridgeEncoder(lzEncoder).getLzEndpointId(4663), 30416);
+
+        // Rerunning on an already configured chain registers nothing
+        vm.recordLogs();
+        setupBridgeEncoders.run();
+        assertEq(vm.getRecordedLogs().length, 0);
+
+        // A registration whose onchain value differs from the table is corrected, and nothing else is touched
+        vm.prank(deployMakinaX.deployer());
+        ICctpV2BridgeEncoder(cctpEncoder).setCctpDomain(42161, 99);
+
+        vm.recordLogs();
+        setupBridgeEncoders.run();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(logs.length, 1);
+        assertEq(logs[0].emitter, cctpEncoder);
+        assertEq(logs[0].topics[0], ICctpV2BridgeEncoder.CctpDomainRegistered.selector);
+        assertEq(ICctpV2BridgeEncoder(cctpEncoder).getCctpDomain(42161), 3);
+    }
+
+    function testScript_CreateModule_ViewMode() public {
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
+
+        deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setFilenames(_testFilename(), "");
+        deployMakinaX.setSkipAMSetup(true);
+        deployMakinaX.run();
+
+        (MakinaXInfra memory infra,,) = deployMakinaX.deployment();
+
+        // View mode: the calldata is logged, the factory is never called and nothing is deployed
+        createModule = new CreateModule();
+        createModule.setParams(address(infra.moduleFactory), _testFilename(), "");
+        createModule.setViewMode(true);
+
+        vm.expectCall(address(infra.moduleFactory), abi.encodeWithSelector(ModuleFactory.createModule.selector), 0);
+        createModule.run();
+
+        assertEq(createModule.deployment(), address(0));
+    }
+
+    function testScript_SetupBridgeEncoders_ViewMode() public {
+        vm.createSelectFork({urlOrAlias: getChain(ETHEREUM_CHAIN_ID).chainAlias});
+
+        deployMakinaX = new DeployMakinaX();
+        deployMakinaX.setFilenames(_testFilename(), "");
+        deployMakinaX.setSkipAMSetup(true);
+        deployMakinaX.run();
+
+        (MakinaXInfra memory infra, uint16[] memory bridgeIds, address[] memory bridgeEncoders) =
+            deployMakinaX.deployment();
+
+        // View mode: the calls are built and logged, nothing is sent
+        SetupBridgeEncoders setupBridgeEncoders = new SetupBridgeEncoders();
+        setupBridgeEncoders.setParams(address(infra.accessManager), bridgeIds, bridgeEncoders);
+        setupBridgeEncoders.setViewMode(true);
+
+        for (uint256 i; i < bridgeIds.length; ++i) {
+            if (bridgeIds[i] == CCTP_V2_BRIDGE_ID) {
+                vm.expectCall(bridgeEncoders[i], abi.encodeWithSelector(ICctpV2BridgeEncoder.setCctpDomain.selector), 0);
+            } else if (bridgeIds[i] == LAYER_ZERO_V2_BRIDGE_ID) {
+                vm.expectCall(
+                    bridgeEncoders[i], abi.encodeWithSelector(ILayerZeroV2BridgeEncoder.setLzEndpointId.selector), 0
+                );
+            }
+        }
+        setupBridgeEncoders.run();
     }
 
     function _assertModuleSetup(IMakinaXModule module, MakinaXInfra memory infra, string memory inputJson)
@@ -375,7 +485,7 @@ contract Deploy_Scripts_Test is Base_Test {
             encoderSetterSelectors = new bytes4[](1);
             encoderSetterSelectors[0] = CctpV2BridgeEncoder.setCctpDomain.selector;
         } else {
-            revert("unsupported bridgeId in test fixture");
+            revert("unsupported bridgeId");
         }
 
         // The encoder setters are guarded by INFRA_CONFIG_ROLE
@@ -420,5 +530,21 @@ contract Deploy_Scripts_Test is Base_Test {
         while (vm.keyExistsJson(inputJson, string.concat(".bridgesTargets[", vm.toString(len), "]"))) {
             ++len;
         }
+    }
+
+    /// @dev Input and output records of the test deployments, named after the forked chain.
+    function _testFilename() internal returns (string memory) {
+        return string.concat(getChain(ETHEREUM_CHAIN_ID).name, "-Test.json");
+    }
+
+    function _freeTestFilename() internal returns (string memory) {
+        return string.concat("Free-", getChain(ETHEREUM_CHAIN_ID).name, "-Test.json");
+    }
+
+    /// @dev A committed test record under `outputs/`. Test deployments are deterministic, so they match the records
+    ///      without rewriting them. A failing comparison means the record must be regenerated, by running the
+    ///      script with that output filename.
+    function _record(string memory dir, string memory filename) internal view returns (string memory) {
+        return vm.readFile(string.concat(vm.projectRoot(), "/script/deploy/outputs/", dir, "/", filename));
     }
 }

@@ -2,10 +2,17 @@ managePositionBatch.t.sol
 ├── when call is reentrant
 │  └── it should revert
 └── when call is not reentrant
-   ├── when caller is not a registered operator
-   │  └── it should revert with UnauthorizedCaller
-   └── when caller is a registered operator
-      ├── when management and accounting instruction list lengths are mismatched
-      │  └── it should revert with MismatchedLengths
-      └── when management and accounting instruction list lengths are matched
-         └── it should execute the provided pairs of management and optional accounting instructions sequentially, and return the resulting position values and value changes when applicable.
+   ├── given the module is suspended
+   │  └── it should revert with Suspended
+   └── given the module is not suspended
+      ├── given the module is paused
+      │  └── it should revert with Paused
+      └── given the module is not paused
+         ├── when caller is not a registered operator
+         │  └── it should revert with UnauthorizedCaller
+         └── when caller is a registered operator
+            ├── when the management and accounting instruction lists have different lengths
+            │  └── it should revert with MismatchedLengths
+            └── when the management and accounting instruction lists have the same length
+               ├── it should manage each provided pair of management and optional accounting instructions sequentially, as managePosition does
+               └── it should return the resulting position values and value changes

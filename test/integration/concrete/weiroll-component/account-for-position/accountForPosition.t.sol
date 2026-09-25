@@ -20,9 +20,9 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
 
         // create vault position
         IWeirollComponent.Instruction memory mgmtInstruction =
-            _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), vaultInputAmount);
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), vaultInputAmount));
         IWeirollComponent.Instruction memory acctInstruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         vm.prank(operator);
         makinaXModule.managePosition(mgmtInstruction, acctInstruction);
@@ -31,10 +31,12 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
     function test_RevertWhen_ReentrantCall() public {
         uint256 borrowInputAmount = 1e18;
         deal(address(tokenA), address(borrowModule), borrowInputAmount, true);
-        IWeirollComponent.Instruction memory borrowMgmtInstruction =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount);
-        IWeirollComponent.Instruction memory borrowAcctInstruction =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+        IWeirollComponent.Instruction memory borrowMgmtInstruction = _withProof(
+            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount)
+        );
+        IWeirollComponent.Instruction memory borrowAcctInstruction = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         tokenA.scheduleReenter(
             MockERC20.Type.Before,
@@ -80,8 +82,8 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
     }
 
     function test_RevertWhen_ProvidedInstructionNonAccountingType() public {
-        IWeirollComponent.Instruction memory instruction;
-        _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0);
+        IWeirollComponent.Instruction memory instruction =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), 0));
 
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         vm.prank(operator);
@@ -95,46 +97,48 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         MockERC4626 vault2 = new MockERC4626("Vault2", "VLT2", IERC20(tokenA), 0);
         IWeirollComponent.Instruction memory instruction =
             _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault2));
+        instruction.merkleProof = _proofOf(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong posId
-        instruction = _build4626AccountingInstruction(address(safe), SUPPLY_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
+        instruction.positionId = SUPPLY_POS_ID;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong isDebt
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.isDebt = true;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong groupId
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.groupId = 1;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong affected tokens list
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.affectedTokens[0] = address(0);
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong commands
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.commands[2] = instruction.commands[1];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong state
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.state[2] = instruction.state[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
 
         // use wrong bitmap
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         instruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.accountForPosition(instruction);
@@ -144,7 +148,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         // use new root
         vm.prank(address(safe));
         makinaXModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
-        instruction = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        instruction = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.accountForPosition(instruction);
@@ -154,7 +158,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
         vault.setAccountingDisabled(true);
 
         IWeirollComponent.Instruction memory instruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         vm.expectRevert();
         vm.prank(operator);
         makinaXModule.accountForPosition(instruction);
@@ -162,10 +166,22 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
 
     function test_RevertGiven_AccountingOutputStateInvalid() public {
         IWeirollComponent.Instruction memory instruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         // replace end flag with null value in accounting output state
         delete instruction.state[1];
         vm.expectRevert(Errors.InvalidAccounting.selector);
+        vm.prank(operator);
+        makinaXModule.accountForPosition(instruction);
+    }
+
+    function test_RevertGiven_PriceFeedRouteNotRegistered() public {
+        IWeirollComponent.Instruction memory instruction =
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
+
+        vm.prank(address(safe));
+        makinaXModule.clearFeedRoute(address(tokenB));
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.PriceFeedRouteNotRegistered.selector, address(tokenB)));
         vm.prank(operator);
         makinaXModule.accountForPosition(instruction);
     }
@@ -180,7 +196,7 @@ contract AccountForPosition_Integration_Concrete_Test is WeirollComponent_Integr
             * vault.previewRedeem(vault.balanceOf(address(safe))) / 1e18;
 
         IWeirollComponent.Instruction memory instruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         vm.prank(operator);
         uint256 value = makinaXModule.accountForPosition(instruction);

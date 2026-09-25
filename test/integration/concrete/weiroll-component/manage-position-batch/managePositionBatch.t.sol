@@ -14,10 +14,11 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         deal(address(tokenB), address(safe), 3e18, true);
 
         IWeirollComponent.Instruction[] memory mgmtInstructions = new IWeirollComponent.Instruction[](1);
-        mgmtInstructions[0] = _build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount);
+        mgmtInstructions[0] =
+            _withProof(_build4626DepositInstruction(address(safe), VAULT_POS_ID, address(vault), inputAmount));
 
         IWeirollComponent.Instruction[] memory acctInstructions = new IWeirollComponent.Instruction[](1);
-        acctInstructions[0] = _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+        acctInstructions[0] = _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
 
         tokenB.scheduleReenter(
             MockERC20.Type.Before,
@@ -95,16 +96,20 @@ contract ManagePositionBatch_Integration_Concrete_Test is WeirollComponent_Integ
         deal(address(tokenB), address(borrowModule), borrowInputAmount, true);
 
         IWeirollComponent.Instruction[] memory mgmtInstructions = new IWeirollComponent.Instruction[](2);
-        mgmtInstructions[0] =
-            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), supplyInputAmount);
-        mgmtInstructions[1] =
-            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount);
+        mgmtInstructions[0] = _withProof(
+            _buildMockSupplyModuleSupplyInstruction(SUPPLY_POS_ID, address(supplyModule), supplyInputAmount)
+        );
+        mgmtInstructions[1] = _withProof(
+            _buildMockBorrowModuleBorrowInstruction(BORROW_POS_ID, address(borrowModule), borrowInputAmount)
+        );
 
         IWeirollComponent.Instruction[] memory acctInstructions = new IWeirollComponent.Instruction[](2);
-        acctInstructions[0] =
-            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule));
-        acctInstructions[1] =
-            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule));
+        acctInstructions[0] = _withProof(
+            _buildMockSupplyModuleAccountingInstruction(address(safe), SUPPLY_POS_ID, address(supplyModule))
+        );
+        acctInstructions[1] = _withProof(
+            _buildMockBorrowModuleAccountingInstruction(address(safe), BORROW_POS_ID, address(borrowModule))
+        );
 
         uint256 expectedSupplyPosValue = supplyInputAmount * PRICE_B_E;
         uint256 expectedBorrowPosValue = borrowInputAmount * PRICE_B_E;

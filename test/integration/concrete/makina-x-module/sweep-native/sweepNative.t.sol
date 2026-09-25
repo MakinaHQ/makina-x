@@ -37,7 +37,8 @@ contract SweepNative_Integration_Concrete_Test is Integration_Concrete_Test {
         uint256 amount = 3e18;
 
         vm.deal(address(this), amount);
-        address(makinaXModule).call{value: amount}("");
+        (bool ok,) = address(makinaXModule).call{value: amount}("");
+        assertTrue(ok);
 
         vm.prank(address(safe));
         makinaXModule.sweepNative();

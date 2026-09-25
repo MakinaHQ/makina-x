@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.35;
 
-// console logging is used to expose the call's calldata in view mode
-// solhint-disable no-console
-
 import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -13,12 +9,15 @@ import {IMakinaXGovernable} from "../../../src/interfaces/IMakinaXGovernable.sol
 import {IMakinaXModule} from "../../../src/interfaces/IMakinaXModule.sol";
 import {ModuleFactory} from "../../../src/factory/ModuleFactory.sol";
 
+import {AMGovCalldata} from "../utils/AMGovCalldata.sol";
+
 /// @notice Shared logic of the scripts creating a MakinaXModule clone through the `ModuleFactory`.
-/// @dev Concrete scripts implement `_createModuleCalldata`, encoding the factory call to perform.
+/// @dev Concrete scripts implement `_createCall`, building the factory call to perform.
 ///
 /// Modes, selected by the `VIEW_MODE` env var:
 ///   - Broadcast (default): sends the call and writes the deployed module address to the output file.
-///   - View (`VIEW_MODE=true`): logs the factory address and the calldata, sends nothing and writes no file.
+///   - View (`VIEW_MODE=true`): logs the factory address and the calldata, alongside its `AccessManager.schedule`
+///     wrapper. Sends nothing and writes no file.
 ///
 /// Env vars:
 ///   INFRA_OUTPUT_FILENAME  - infra output file holding the ModuleFactory address
@@ -28,7 +27,7 @@ import {ModuleFactory} from "../../../src/factory/ModuleFactory.sol";
 ///   MODULE_OUTPUT_FILENAME - file to write the deployed module address to
 ///                            (under script/deploy/outputs/modules/, broadcast mode only)
 ///   VIEW_MODE (optional)   - true for view mode, unset or false for broadcast mode
-abstract contract CreateModuleBase is Script {
+abstract contract CreateModuleBase is Script, AMGovCalldata {
     string public moduleInputJson;
     string public moduleOutputPath;
 
@@ -38,12 +37,9 @@ abstract contract CreateModuleBase is Script {
 
     address public module;
 
-    constructor() {
-        viewMode = vm.envOr("VIEW_MODE", false);
-    }
-
     /// @dev Test hook to set the ModuleFactory and the module input/output filenames explicitly, instead of having
-    ///      `run` resolve them from the env vars and the infra output file.
+    ///      `run` resolve them from the env vars and the infra output file. An empty output filename skips writing
+    ///      the output file.
     function setParams(address _moduleFactory, string memory moduleInputFilename, string memory moduleOutputFilename)
         public
     {
@@ -51,11 +47,16 @@ abstract contract CreateModuleBase is Script {
 
         string memory basePath = string.concat(vm.projectRoot(), "/script/deploy/");
 
-        // load module init params
         moduleInputJson = vm.readFile(string.concat(basePath, "inputs/modules/", moduleInputFilename));
 
-        // output path to later save the deployed module
-        moduleOutputPath = string.concat(basePath, "outputs/modules/", moduleOutputFilename);
+        moduleOutputPath = bytes(moduleOutputFilename).length == 0
+            ? ""
+            : string.concat(basePath, "outputs/modules/", moduleOutputFilename);
+    }
+
+    /// @dev Test hook to select the mode explicitly, instead of having `run` read it from the `VIEW_MODE` env var.
+    function setViewMode(bool _viewMode) public {
+        viewMode = _viewMode;
     }
 
     function deployment() public view returns (address) {
@@ -64,39 +65,35 @@ abstract contract CreateModuleBase is Script {
 
     function run() public {
         if (address(moduleFactory) == address(0)) {
-            _loadParamsFromEnv();
+            loadParamsFromEnv();
         }
 
-        bytes memory callData = _createModuleCalldata(
-            _parseInitParams(),
-            vm.parseJsonBytes32(moduleInputJson, ".salt"),
-            vm.parseJsonBytes32(moduleInputJson, ".referralKey")
-        );
+        Call memory call = _createCall();
 
         if (viewMode) {
-            _logCalldata(callData);
+            _logCall(call);
             return;
         }
 
         vm.startBroadcast();
 
-        module = abi.decode(Address.functionCall(address(moduleFactory), callData), (address));
+        module = abi.decode(Address.functionCall(call.target, call.data), (address));
 
         vm.stopBroadcast();
 
-        _writeOutput();
+        if (bytes(moduleOutputPath).length != 0) {
+            _writeOutput();
+        }
     }
 
-    /// @dev Encodes the `ModuleFactory` call deploying the module for the given init params.
-    function _createModuleCalldata(
-        IMakinaXModule.MakinaXModuleInitParams memory params,
-        bytes32 salt,
-        bytes32 referralKey
-    ) internal view virtual returns (bytes memory);
+    /// @dev The `ModuleFactory` call deploying the module, built from the input file.
+    function _createCall() internal view virtual returns (Call memory);
 
     /// @dev Calls `setParams` with this script's env vars, reading the factory address from the infra output file.
     ///      The output filename is not needed in view mode.
-    function _loadParamsFromEnv() internal {
+    function loadParamsFromEnv() public {
+        viewMode = vm.envOr("VIEW_MODE", false);
+
         string memory infraOutputPath =
             string.concat(vm.projectRoot(), "/script/deploy/outputs/infra/", vm.envString("INFRA_OUTPUT_FILENAME"));
         string memory moduleOutputFilename = viewMode ? "" : vm.envString("MODULE_OUTPUT_FILENAME");
@@ -121,12 +118,6 @@ abstract contract CreateModuleBase is Script {
             initialMaxSwapLossBps: vm.parseJsonUint(moduleInputJson, ".initialMaxSwapLossBps"),
             initialSwapCooldownDuration: vm.parseJsonUint(moduleInputJson, ".initialSwapCooldownDuration")
         });
-    }
-
-    function _logCalldata(bytes memory callData) internal view {
-        console2.log("Target (ModuleFactory):", address(moduleFactory));
-        console2.log("Calldata:");
-        console2.logBytes(callData);
     }
 
     function _writeOutput() internal {

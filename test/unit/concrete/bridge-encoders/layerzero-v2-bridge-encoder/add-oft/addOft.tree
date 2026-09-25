@@ -2,11 +2,11 @@ addOft.t.sol
 ├── when caller does not have the relevant role
 │  └── it should revert with AccessManagedUnauthorized
 └── when caller has the relevant role
-   ├── when the provided oft address is equal to zero
-   │  └── it should revert with ZeroTokenAddress
-   └── when the provided oft address is not equal to zero
-      ├── when the provided oft address is already registered
+   ├── when the provided OFT address is zero
+   │  └── it should revert with ZeroAddress
+   └── when the provided OFT address is not zero
+      ├── given the provided OFT is already registered
       │  └── it should revert with OftAlreadyRegistered
-      └── when the provided oft address is not already registered
-         ├── it should mark the provided oft as registered
-         └── it should emit a OftAdded event
+      └── given the provided OFT is not registered
+         ├── it should mark the provided OFT as registered
+         └── it should emit an OftAdded event

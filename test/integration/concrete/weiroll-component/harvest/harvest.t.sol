@@ -19,7 +19,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
     function test_RevertWhen_ReentrantCall() public {
         uint256 harvestAmount = 1e18;
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders;
 
         tokenA.scheduleReenter(
@@ -69,7 +69,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
     function test_RevertWhen_InstructionNonHarvestingType() public {
         IWeirollComponent.Instruction memory instruction =
-            _build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault));
+            _withProof(_build4626AccountingInstruction(address(safe), VAULT_POS_ID, address(vault)));
         ISwapComponent.SwapOrder[] memory swapOrders;
         vm.expectRevert(Errors.InvalidInstructionType.selector);
         vm.prank(operator);
@@ -85,23 +85,25 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
 
         // use wrong reward contract
         instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenB), harvestAmount);
+        instruction.merkleProof =
+            _proofOf(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong commands
-        instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+        instruction = _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         delete instruction.commands[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong state
-        instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+        instruction = _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         delete instruction.state[0];
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.harvest(instruction, swapOrders);
 
         // use wrong bitmap
-        instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+        instruction = _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         instruction.stateBitmap = 0;
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         makinaXModule.harvest(instruction, swapOrders);
@@ -111,7 +113,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         // use new root
         vm.prank(address(safe));
         makinaXModule.setAllowedInstrRoot(keccak256(abi.encodePacked("newRoot")));
-        instruction = _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+        instruction = _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         vm.expectRevert(Errors.InvalidInstructionProof.selector);
         vm.prank(operator);
         makinaXModule.harvest(instruction, swapOrders);
@@ -124,7 +126,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         deal(address(tokenA), address(safe), harvestAmount, true);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -147,7 +149,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 previewSwap = dex.previewSwap(address(tokenA), address(tokenB), harvestAmount);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -175,7 +177,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 previewOutputAmount = dex.previewSwap(address(tokenA), address(tokenB), harvestAmount);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -260,7 +262,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 harvestAmount = 1e18;
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -297,7 +299,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         deal(address(tokenA), address(safe), harvestAmount, true);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -320,7 +322,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         deal(address(tokenA), address(safe), harvestAmount, true);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -343,7 +345,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 previewSwap = dex.previewSwap(address(tokenA), address(tokenB), harvestAmount);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -366,7 +368,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 previewSwap = dex.previewSwap(address(tokenA), address(tokenB), harvestAmount);
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](2);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
@@ -393,7 +395,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
     function _test_Harvest_NoSwap() internal {
         uint256 harvestAmount = 1e18;
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](0);
 
         vm.prank(operator);
@@ -407,7 +409,7 @@ contract Harvest_Integration_Concrete_Test is WeirollComponent_Integration_Concr
         uint256 expectedFee = previewSwap * DEFAULT_SWAP_FEE_RATE / 1e18;
 
         IWeirollComponent.Instruction memory instruction =
-            _buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount);
+            _withProof(_buildMockRewardTokenHarvestInstruction(address(safe), address(tokenA), harvestAmount));
         ISwapComponent.SwapOrder[] memory swapOrders = new ISwapComponent.SwapOrder[](1);
         swapOrders[0] = ISwapComponent.SwapOrder({
             swapperId: TEST_SWAPPER_ID,
